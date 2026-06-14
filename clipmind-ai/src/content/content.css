@@ -1,0 +1,169 @@
+.clipmind-bubble {
+  position: absolute;
+  z-index: 2147483646;
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(124, 111, 247, 0.2);
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(30, 27, 75, 0.15), 0 2px 8px rgba(124, 111, 247, 0.1);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px;
+  color: #1e1b4b;
+  min-width: 280px;
+  max-width: 320px;
+  animation: clipmind-fade-in 0.2s ease;
+  pointer-events: auto;
+}
+
+@keyframes clipmind-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.clipmind-bubble__brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 12px;
+  color: #7c6ff7;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(124, 111, 247, 0.1);
+}
+
+.clipmind-bubble__logo {
+  font-size: 14px;
+}
+
+.clipmind-bubble__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.clipmind-bubble__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border: 1px solid rgba(124, 111, 247, 0.15);
+  border-radius: 8px;
+  background: #f8f7ff;
+  color: #1e1b4b;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.clipmind-bubble__btn:hover {
+  background: #ede9fe;
+  border-color: #7c6ff7;
+  transform: translateY(-1px);
+}
+
+.clipmind-bubble__btn--primary {
+  background: linear-gradient(135deg, #7c6ff7, #6366f1);
+  color: white;
+  border-color: transparent;
+}
+
+.clipmind-bubble__btn--primary:hover {
+  background: linear-gradient(135deg, #6d5fef, #4f46e5);
+  box-shadow: 0 4px 12px rgba(124, 111, 247, 0.35);
+}
+
+.clipmind-bubble__projects {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.clipmind-bubble__project-btn {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  background: #f8f7ff;
+  color: #1e1b4b;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.clipmind-bubble__project-btn:hover {
+  background: #ede9fe;
+}
+
+.clipmind-bubble__back {
+  padding: 4px 8px;
+  border: none;
+  background: none;
+  color: #7c6ff7;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.clipmind-bubble__loading {
+  padding: 12px;
+  text-align: center;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.clipmind-bubble__duplicate-msg {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 4px 0 8px;
+  line-height: 1.4;
+}
+
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  z-index: 2147483647;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0;
+  transition: all 0.3s ease;
+  pointer-events: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+}
+
+.clipmind-toast--visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.clipmind-toast--success {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.clipmind-toast--warning {
+  background: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.clipmind-toast--error {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
