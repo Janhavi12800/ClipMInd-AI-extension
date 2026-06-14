@@ -7,6 +7,7 @@ export interface AppSettings {
   claudeApiKey: string;
   darkMode: boolean;
   showSelectionBubble: boolean;
+  enableSync: boolean;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -16,4 +17,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
   claudeApiKey: '',
   darkMode: false,
   showSelectionBubble: true,
+  enableSync: false,
 };

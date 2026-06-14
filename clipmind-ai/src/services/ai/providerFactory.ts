@@ -21,26 +21,74 @@ export async function initAIProvider(): Promise<void> {
 }
 
 export async function setAIProvider(type: ProviderType): Promise<void> {
+  const settings = await getSettings();
   currentType = type;
-  switch (type) {
-    case 'openai': {
-      const { OpenAIProvider } = await import('./openAiProvider.placeholder');
-      currentProvider = new OpenAIProvider();
-      break;
+
+  try {
+    switch (type) {
+      case 'openai': {
+        if (!settings.openaiApiKey?.trim()) {
+          currentProvider = mockProvider;
+          break;
+        }
+        const { OpenAIProvider } = await import('./openAiProvider');
+        currentProvider = new OpenAIProvider(settings.openaiApiKey);
+        break;
+      }
+      case 'gemini': {
+        if (!settings.geminiApiKey?.trim()) {
+          currentProvider = mockProvider;
+          break;
+        }
+        const { GeminiProvider } = await import('./geminiProvider');
+        currentProvider = new GeminiProvider(settings.geminiApiKey);
+        break;
+      }
+      case 'claude': {
+        if (!settings.claudeApiKey?.trim()) {
+          currentProvider = mockProvider;
+          break;
+        }
+        const { ClaudeProvider } = await import('./claudeProvider');
+        currentProvider = new ClaudeProvider(settings.claudeApiKey);
+        break;
+      }
+      default:
+        currentProvider = mockProvider;
+        currentType = 'mock';
     }
-    case 'gemini': {
-      const { GeminiProvider } = await import('./geminiProvider.placeholder');
-      currentProvider = new GeminiProvider();
-      break;
+  } catch {
+    currentProvider = mockProvider;
+  }
+}
+
+export async function testAIProvider(type: ProviderType): Promise<{ ok: boolean; message: string }> {
+  const settings = await getSettings();
+  try {
+    let provider: AIProvider;
+    switch (type) {
+      case 'openai':
+        if (!settings.openaiApiKey?.trim()) return { ok: false, message: 'API key required' };
+        provider = new (await import('./openAiProvider')).OpenAIProvider(settings.openaiApiKey);
+        break;
+      case 'gemini':
+        if (!settings.geminiApiKey?.trim()) return { ok: false, message: 'API key required' };
+        provider = new (await import('./geminiProvider')).GeminiProvider(settings.geminiApiKey);
+        break;
+      case 'claude':
+        if (!settings.claudeApiKey?.trim()) return { ok: false, message: 'API key required' };
+        provider = new (await import('./claudeProvider')).ClaudeProvider(settings.claudeApiKey);
+        break;
+      default:
+        return { ok: true, message: 'Mock provider works offline' };
     }
-    case 'claude': {
-      const { ClaudeProvider } = await import('./claudeProvider.placeholder');
-      currentProvider = new ClaudeProvider();
-      break;
-    }
-    default:
-      currentProvider = mockProvider;
-      currentType = 'mock';
+    const title = await provider.generateTitle('Test connection from ClipMind AI');
+    return { ok: true, message: `Connected! Sample: "${title.slice(0, 40)}"` };
+  } catch (error) {
+    return {
+      ok: false,
+      message: error instanceof Error ? error.message : 'Connection failed',
+    };
   }
 }
 

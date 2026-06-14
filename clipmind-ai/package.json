@@ -1,6 +1,6 @@
 {
   "name": "clipmind-ai",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "AI-powered web memory and research clipping Chrome Extension",
   "type": "module",
   "scripts": {

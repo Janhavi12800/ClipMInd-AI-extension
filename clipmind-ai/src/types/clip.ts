@@ -57,7 +57,9 @@ export type MessageType =
   | 'CLIP_ERROR'
   | 'SHOW_TOAST'
   | 'OPEN_SIDE_PANEL'
-  | 'GET_SETTINGS';
+  | 'GET_SETTINGS'
+  | 'TEST_AI_PROVIDER'
+  | 'SYNC_NOW';
 
 export interface ExtensionMessage {
   type: MessageType;

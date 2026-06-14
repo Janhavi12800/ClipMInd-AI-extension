@@ -77,8 +77,21 @@ Rebuilds on file changes. Reload the extension in `chrome://extensions` after ea
 
 ### Settings
 1. Click ⚙️ in the popup or dashboard, or right-click the extension → **Options**
-2. Choose AI provider (Mock, OpenAI, Gemini, Claude)
-3. Toggle dark mode and selection bubble preferences
+2. Choose AI provider (Mock, OpenAI, Gemini, Claude) and add API key
+3. Click **Test Connection** to verify
+4. Toggle dark mode, sync, and selection bubble preferences
+
+### Keyboard Shortcuts
+| Shortcut | Action |
+|---|---|
+| `Ctrl+Shift+S` | Save selected text (with AI summary) |
+| `Ctrl+Shift+P` | Save current page |
+| `Ctrl+Shift+M` | Open dashboard |
+
+Customize at `chrome://extensions/shortcuts`
+
+### Cross-Device Sync
+Enable in Settings → syncs your 40 most recent clips + projects via Chrome Sync (signed-in Chrome required). API keys are never synced.
 
 ## Project Structure
 
@@ -102,22 +115,28 @@ clipmind-ai/
 
 ## AI Provider Integration
 
-The extension uses a provider abstraction layer. By default, the **mock provider** runs locally with no API keys.
+The extension uses a provider abstraction layer. **Mock provider** works offline by default.
 
-To connect a real AI provider:
+### Real AI Providers (v1.1+)
 
-1. Implement the `AIProvider` interface in `src/services/ai/`
-2. Add your API key handling (recommend Chrome storage + options page)
-3. Switch provider in `src/services/ai/providerFactory.ts`
+| Provider | Model | API |
+|---|---|---|
+| OpenAI | gpt-4o-mini | platform.openai.com |
+| Gemini | gemini-1.5-flash | aistudio.google.com |
+| Claude | claude-3-5-haiku-latest | console.anthropic.com |
 
-Placeholder files included:
-- `openAiProvider.placeholder.ts`
-- `geminiProvider.placeholder.ts`
-- `claudeProvider.placeholder.ts`
+1. Open **Settings** (⚙️)
+2. Select your provider and paste your API key
+3. Click **Test Connection** then **Save Settings**
 
-Configure your provider in **Settings** (right-click extension icon → Options, or ⚙️ in popup/dashboard).
+API keys are stored locally and never synced.
 
-### Mock AI Features
+Placeholder files for reference:
+- `openAiProvider.ts` (live implementation)
+- `geminiProvider.ts` (live implementation)
+- `claudeProvider.ts` (live implementation)
+
+### Mock AI Features (offline fallback)
 - Title generation from content keywords
 - Summarization from first sentences
 - Tag extraction from word frequency

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ClipMind AI",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Select anything on any website. ClipMind saves it with source, summary, tags, and lets you manage your saved web knowledge.",
   "icons": {
     "16": "public/icons/icon16.png",
@@ -44,5 +44,28 @@
     "scripting",
     "sidePanel"
   ],
+  "commands": {
+    "save-selection": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+S",
+        "mac": "Command+Shift+S"
+      },
+      "description": "Save selected text to ClipMind AI"
+    },
+    "save-page": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+P",
+        "mac": "Command+Shift+P"
+      },
+      "description": "Save current page to ClipMind AI"
+    },
+    "open-dashboard": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+M",
+        "mac": "Command+Shift+M"
+      },
+      "description": "Open ClipMind dashboard"
+    }
+  },
   "host_permissions": ["<all_urls>"]
 }

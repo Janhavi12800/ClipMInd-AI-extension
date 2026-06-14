@@ -6,6 +6,17 @@ import { generateId } from '../utils/id';
 const CLIPS_KEY = 'clipmind_clips';
 const PROJECTS_KEY = 'clipmind_projects';
 
+async function triggerSync(): Promise<void> {
+  try {
+    const { pushToSync } = await import('./syncService');
+    const clips = await getStorage<Clip[]>(CLIPS_KEY, []);
+    const projects = await getStorage<Project[]>(PROJECTS_KEY, []);
+    await pushToSync(clips, projects);
+  } catch {
+    // sync is optional
+  }
+}
+
 async function getStorage<T>(key: string, fallback: T): Promise<T> {
   try {
     const result = await chrome.storage.local.get(key);
@@ -46,6 +57,7 @@ export async function saveClip(input: ClipInput): Promise<Clip> {
 
   clips.unshift(clip);
   await setStorage(CLIPS_KEY, clips);
+  triggerSync();
   return clip;
 }
 
@@ -62,6 +74,7 @@ export async function updateClip(id: string, updates: Partial<Clip>): Promise<Cl
   };
   clips[index] = updated;
   await setStorage(CLIPS_KEY, clips);
+  triggerSync();
   return updated;
 }
 
@@ -70,6 +83,7 @@ export async function deleteClip(id: string): Promise<boolean> {
   const filtered = clips.filter((c) => c.id !== id);
   if (filtered.length === clips.length) return false;
   await setStorage(CLIPS_KEY, filtered);
+  triggerSync();
   return true;
 }
 
@@ -162,6 +176,7 @@ export async function saveProject(project: Omit<Project, 'id' | 'createdAt' | 'u
       const updated = { ...projects[index], ...project, updatedAt: now };
       projects[index] = updated;
       await setStorage(PROJECTS_KEY, projects);
+      triggerSync();
       return updated;
     }
   }
@@ -175,6 +190,7 @@ export async function saveProject(project: Omit<Project, 'id' | 'createdAt' | 'u
   };
   projects.push(newProject);
   await setStorage(PROJECTS_KEY, projects);
+  triggerSync();
   return newProject;
 }
 
@@ -190,6 +206,7 @@ export async function deleteProject(id: string): Promise<boolean> {
     c.projectId === id ? { ...c, projectId: INBOX_PROJECT_ID } : c
   );
   await setStorage(CLIPS_KEY, updatedClips);
+  triggerSync();
   return true;
 }
 

@@ -21,6 +21,7 @@ import { ProjectSidebar, PROJECT_COLORS } from '../components/ProjectSidebar';
 import { AskMemory } from '../components/AskMemory';
 import { EmptyState } from '../components/EmptyState';
 import { getSettings, saveSettings, onSettingsChange } from '../services/settingsService';
+import { getSyncStatus, type SyncStatus } from '../services/syncService';
 import '../styles/global.css';
 import './sidepanel.css';
 
@@ -37,6 +38,7 @@ export function SidePanel() {
   const [sort, setSort] = useState<'newest' | 'oldest'>('newest');
   const [darkMode, setDarkMode] = useState(false);
   const [activeTab, setActiveTab] = useState<'clips' | 'ask'>('clips');
+  const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
 
   const loadData = useCallback(async () => {
     const filters: ClipFilters = {
@@ -67,6 +69,7 @@ export function SidePanel() {
 
   useEffect(() => {
     getSettings().then((s) => setDarkMode(s.darkMode));
+    getSyncStatus().then(setSyncStatus);
     return onSettingsChange((s) => setDarkMode(s.darkMode));
   }, []);
 
@@ -110,6 +113,13 @@ export function SidePanel() {
     downloadFile(clipsToJson(allClips), `clipmind-export-${Date.now()}.json`, 'application/json');
   };
 
+  const handleSyncNow = async () => {
+    await chrome.runtime.sendMessage({ type: 'SYNC_NOW' });
+    const status = await getSyncStatus();
+    setSyncStatus(status);
+    await loadData();
+  };
+
   const handleExportMarkdown = () => {
     const md = clips.map((c) => clipToMarkdown(c)).join('\n\n---\n\n');
     downloadFile(md, `clipmind-export-${Date.now()}.md`, 'text/markdown');
@@ -146,6 +156,11 @@ export function SidePanel() {
           <button className="cm-btn cm-btn--sm" onClick={handleExportMarkdown} title="Export visible clips as Markdown" disabled={clips.length === 0}>
             ⬇ MD
           </button>
+          {syncStatus?.enabled && (
+            <button className="cm-btn cm-btn--sm cm-btn--ghost" onClick={handleSyncNow} title="Sync from cloud">
+              🔄
+            </button>
+          )}
         </div>
       </header>
 
