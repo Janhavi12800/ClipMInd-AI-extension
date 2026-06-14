@@ -4,12 +4,21 @@ interface PageContext {
   domain: string;
 }
 
+type PendingAction = 'save' | 'summarize' | 'explain' | 'project';
+
+interface SaveResult {
+  status: string;
+  clip?: unknown;
+  message?: string;
+}
+
 export class SelectionBubble {
   private container: HTMLDivElement | null = null;
   private toast: HTMLDivElement | null = null;
   private currentText = '';
   private pageContext: PageContext | null = null;
   private projectPickerOpen = false;
+  private selectionRect: DOMRect | null = null;
 
   containsTarget(node: Node): boolean {
     return !!this.container?.contains(node);
@@ -19,6 +28,7 @@ export class SelectionBubble {
     this.currentText = text;
     this.pageContext = context;
     this.projectPickerOpen = false;
+    this.selectionRect = rect;
 
     if (!this.container) {
       this.container = this.createBubble();
@@ -93,10 +103,42 @@ export class SelectionBubble {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        const action = (btn as HTMLElement).dataset.action;
-        this.handleAction(action || '');
+        const action = (btn as HTMLElement).dataset.action as PendingAction;
+        this.handleAction(action);
       });
     });
+  }
+
+  private showDuplicateConfirm(action: PendingAction, projectId?: string): void {
+    if (!this.container) return;
+
+    this.container.innerHTML = `
+      <div class="clipmind-bubble__brand">
+        <span class="clipmind-bubble__logo">⚠️</span>
+        <span>Already Saved</span>
+      </div>
+      <p class="clipmind-bubble__duplicate-msg">This content is already in your memory.</p>
+      <div class="clipmind-bubble__actions">
+        <button class="clipmind-bubble__btn clipmind-bubble__btn--primary" data-action="force-save">
+          Save Anyway
+        </button>
+        <button class="clipmind-bubble__btn" data-action="cancel-duplicate">Cancel</button>
+      </div>
+    `;
+
+    this.container.querySelector('[data-action="force-save"]')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.executeSave(action, true, projectId);
+    });
+
+    this.container.querySelector('[data-action="cancel-duplicate"]')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.hide();
+    });
+
+    if (this.selectionRect) this.positionBubble(this.selectionRect);
   }
 
   private async renderProjectPicker(): Promise<void> {
@@ -123,9 +165,8 @@ export class SelectionBubble {
 
       this.container.querySelectorAll('[data-project-id]').forEach((btn) => {
         btn.addEventListener('click', () => {
-          const projectId = (btn as HTMLElement).dataset.projectId;
-          this.sendMessage('SAVE_TO_PROJECT', { projectId });
-          this.hide();
+          const projectId = (btn as HTMLElement).dataset.projectId!;
+          this.handleAction('project', projectId);
         });
       });
 
@@ -140,40 +181,70 @@ export class SelectionBubble {
     }
   }
 
-  private handleAction(action: string): void {
+  private handleAction(action: PendingAction, projectId?: string): void {
+    if (action === 'project' && !projectId) {
+      this.projectPickerOpen = true;
+      this.renderProjectPicker();
+      return;
+    }
+    this.executeSave(action, false, projectId);
+  }
+
+  private executeSave(action: PendingAction, force: boolean, projectId?: string): void {
+    const messageType = this.getMessageType(action);
+    if (!messageType) return;
+
+    this.sendMessage(messageType, { force, projectId }, (result) => {
+      if (result?.status === 'duplicate' && !force) {
+        this.showDuplicateConfirm(action, projectId);
+        return;
+      }
+      if (result?.status === 'saved') {
+        this.showToast('Saved to ClipMind ✓', 'success');
+        this.hide();
+      } else if (result?.status === 'error') {
+        this.showToast(result.message || 'Save failed', 'error');
+        this.hide();
+      }
+    });
+  }
+
+  private getMessageType(action: PendingAction): string | null {
     switch (action) {
-      case 'save':
-        this.sendMessage('SAVE_TEXT_CLIP');
-        this.hide();
-        break;
-      case 'summarize':
-        this.sendMessage('SAVE_TEXT_CLIP_SUMMARIZE');
-        this.hide();
-        break;
-      case 'explain':
-        this.sendMessage('EXPLAIN_SELECTION');
-        this.hide();
-        break;
-      case 'project':
-        this.projectPickerOpen = true;
-        this.renderProjectPicker();
-        break;
+      case 'save': return 'SAVE_TEXT_CLIP';
+      case 'summarize': return 'SAVE_TEXT_CLIP_SUMMARIZE';
+      case 'explain': return 'EXPLAIN_SELECTION';
+      case 'project': return 'SAVE_TO_PROJECT';
+      default: return null;
     }
   }
 
-  private sendMessage(type: string, extra: Record<string, unknown> = {}): void {
+  private sendMessage(
+    type: string,
+    extra: Record<string, unknown> = {},
+    onResult?: (result: SaveResult) => void
+  ): void {
     if (!this.pageContext) return;
 
-    chrome.runtime.sendMessage({
-      type,
-      payload: {
-        text: this.currentText,
-        pageUrl: this.pageContext.pageUrl,
-        pageTitle: this.pageContext.pageTitle,
-        domain: this.pageContext.domain,
-        ...extra,
-      },
-    });
+    const payload = {
+      text: this.currentText,
+      pageUrl: this.pageContext.pageUrl,
+      pageTitle: this.pageContext.pageTitle,
+      domain: this.pageContext.domain,
+      ...extra,
+    };
+
+    if (onResult) {
+      chrome.runtime.sendMessage({ type, payload }, (response) => {
+        if (chrome.runtime.lastError) {
+          onResult({ status: 'error', message: 'Extension error' });
+          return;
+        }
+        onResult(response as SaveResult);
+      });
+    } else {
+      chrome.runtime.sendMessage({ type, payload });
+    }
   }
 
   private positionBubble(rect: DOMRect): void {

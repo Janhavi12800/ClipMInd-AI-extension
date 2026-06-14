@@ -13,6 +13,8 @@ export function Popup() {
   const [noteMode, setNoteMode] = useState(false);
   const [note, setNote] = useState('');
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'warning' | 'error' } | null>(null);
+  const [duplicateConfirm, setDuplicateConfirm] = useState(false);
+  const [pendingWithNote, setPendingWithNote] = useState(false);
 
   const loadData = async () => {
     const [allClips, clipStats] = await Promise.all([getClips(), getClipStats()]);
@@ -30,8 +32,9 @@ export function Popup() {
     setTimeout(() => setMessage(null), 3000);
   };
 
-  const saveCurrentPage = async (withNote = false) => {
+  const saveCurrentPage = async (withNote = false, force = false) => {
     setSaving(true);
+    setDuplicateConfirm(false);
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (!tab?.url || tab.url.startsWith('chrome://')) {
@@ -46,6 +49,7 @@ export function Popup() {
           pageTitle: tab.title || tab.url,
           favicon: tab.favIconUrl,
           userNote: withNote ? note : undefined,
+          force,
         },
       });
 
@@ -55,7 +59,8 @@ export function Popup() {
         setNoteMode(false);
         await loadData();
       } else if (result?.status === 'duplicate') {
-        showMessage('Already saved', 'warning');
+        setDuplicateConfirm(true);
+        setPendingWithNote(withNote);
       } else {
         showMessage(result?.message || 'Failed to save page.', 'error');
       }
@@ -77,6 +82,10 @@ export function Popup() {
     }
   };
 
+  const openSettings = () => {
+    chrome.runtime.openOptionsPage();
+  };
+
   const TYPE_ICONS: Record<string, string> = { text: '📝', image: '🖼️', page: '🌐' };
 
   return (
@@ -89,6 +98,9 @@ export function Popup() {
             <p>Your web memory</p>
           </div>
         </div>
+        <button className="cm-btn cm-btn--sm cm-btn--ghost popup__settings-btn" onClick={openSettings} title="Settings">
+          ⚙️
+        </button>
       </header>
 
       <div className="popup__actions">
@@ -121,6 +133,20 @@ export function Popup() {
           </div>
         )}
       </div>
+
+      {duplicateConfirm && (
+        <div className="popup__duplicate">
+          <p>This page is already saved.</p>
+          <div className="popup__duplicate-actions">
+            <button className="cm-btn cm-btn--sm cm-btn--primary" onClick={() => saveCurrentPage(pendingWithNote, true)}>
+              Save Anyway
+            </button>
+            <button className="cm-btn cm-btn--sm cm-btn--ghost" onClick={() => setDuplicateConfirm(false)}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {message && (
         <div className={`popup__message popup__message--${message.type}`}>{message.text}</div>

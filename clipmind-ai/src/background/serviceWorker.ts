@@ -2,13 +2,28 @@ import { setupContextMenus, getContextMenuId } from './contextMenus';
 import { createImageClip, createTextClip, createPageClip } from '../services/clipService';
 import type { ExtensionMessage } from '../types/clip';
 import { extractDomain } from '../utils/domain';
+import { initAIProvider } from '../services/ai/providerFactory';
+import { getSettings } from '../services/settingsService';
+
+async function initialize(): Promise<void> {
+  setupContextMenus();
+  await initAIProvider();
+}
 
 chrome.runtime.onInstalled.addListener(() => {
-  setupContextMenus();
+  initialize();
 });
 
 chrome.runtime.onStartup.addListener(() => {
-  setupContextMenus();
+  initialize();
+});
+
+initialize();
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && changes.clipmind_settings) {
+    initAIProvider();
+  }
 });
 
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false }).catch(() => {
@@ -68,12 +83,14 @@ async function handleMessage(
           text: string;
           pageUrl: string;
           pageTitle: string;
+          force?: boolean;
         };
         const result = await createTextClip({
           text: payload.text,
           pageUrl: payload.pageUrl,
           pageTitle: payload.pageTitle,
           explain: true,
+          force: payload.force,
         });
         if (tabId) notifyTab(tabId, result);
         return result;
@@ -85,13 +102,28 @@ async function handleMessage(
           pageUrl: string;
           pageTitle: string;
           projectId: string;
+          force?: boolean;
         };
         const result = await createTextClip({
           text: payload.text,
           pageUrl: payload.pageUrl,
           pageTitle: payload.pageTitle,
           projectId: payload.projectId,
+          force: payload.force,
         });
+        if (tabId) notifyTab(tabId, result);
+        return result;
+      }
+
+      case 'SAVE_IMAGE_CLIP': {
+        const payload = message.payload as {
+          imageUrl: string;
+          imageAlt?: string;
+          pageUrl: string;
+          pageTitle: string;
+          force?: boolean;
+        };
+        const result = await createImageClip(payload);
         if (tabId) notifyTab(tabId, result);
         return result;
       }
@@ -106,6 +138,10 @@ async function handleMessage(
         };
         const result = await createPageClip(payload);
         return result;
+      }
+
+      case 'GET_SETTINGS': {
+        return { settings: await getSettings() };
       }
 
       default:

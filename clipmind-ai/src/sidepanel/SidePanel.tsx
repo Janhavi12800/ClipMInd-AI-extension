@@ -20,6 +20,7 @@ import { ClipDetailModal } from '../components/ClipDetailModal';
 import { ProjectSidebar, PROJECT_COLORS } from '../components/ProjectSidebar';
 import { AskMemory } from '../components/AskMemory';
 import { EmptyState } from '../components/EmptyState';
+import { getSettings, saveSettings, onSettingsChange } from '../services/settingsService';
 import '../styles/global.css';
 import './sidepanel.css';
 
@@ -65,8 +66,23 @@ export function SidePanel() {
   }, [loadData]);
 
   useEffect(() => {
+    getSettings().then((s) => setDarkMode(s.darkMode));
+    return onSettingsChange((s) => setDarkMode(s.darkMode));
+  }, []);
+
+  useEffect(() => {
     document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
   }, [darkMode]);
+
+  const toggleDarkMode = async () => {
+    const next = !darkMode;
+    setDarkMode(next);
+    await saveSettings({ darkMode: next });
+  };
+
+  const openSettings = () => {
+    chrome.runtime.openOptionsPage();
+  };
 
   const handleDelete = async (id: string) => {
     await deleteClip(id);
@@ -94,6 +110,11 @@ export function SidePanel() {
     downloadFile(clipsToJson(allClips), `clipmind-export-${Date.now()}.json`, 'application/json');
   };
 
+  const handleExportMarkdown = () => {
+    const md = clips.map((c) => clipToMarkdown(c)).join('\n\n---\n\n');
+    downloadFile(md, `clipmind-export-${Date.now()}.md`, 'text/markdown');
+  };
+
   const handleClipUpdate = (clip: Clip) => {
     setSelectedClip(clip);
     loadData();
@@ -113,11 +134,17 @@ export function SidePanel() {
           </div>
         </div>
         <div className="sidepanel__header-actions">
-          <button className="cm-btn cm-btn--sm cm-btn--ghost" onClick={() => setDarkMode(!darkMode)} title="Toggle theme">
+          <button className="cm-btn cm-btn--sm cm-btn--ghost" onClick={toggleDarkMode} title="Toggle theme">
             {darkMode ? '☀️' : '🌙'}
           </button>
+          <button className="cm-btn cm-btn--sm cm-btn--ghost" onClick={openSettings} title="Settings">
+            ⚙️
+          </button>
           <button className="cm-btn cm-btn--sm" onClick={handleExportJson} title="Export all clips">
-            ⬇ Export JSON
+            ⬇ JSON
+          </button>
+          <button className="cm-btn cm-btn--sm" onClick={handleExportMarkdown} title="Export visible clips as Markdown" disabled={clips.length === 0}>
+            ⬇ MD
           </button>
         </div>
       </header>

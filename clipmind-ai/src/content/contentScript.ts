@@ -1,6 +1,23 @@
 import { SelectionBubble } from './selectionBubble';
 
 const bubble = new SelectionBubble();
+let bubbleEnabled = true;
+
+function loadSettings(): void {
+  chrome.runtime.sendMessage({ type: 'GET_SETTINGS' }, (response) => {
+    if (!chrome.runtime.lastError && response?.settings) {
+      bubbleEnabled = response.settings.showSelectionBubble !== false;
+    }
+  });
+}
+
+loadSettings();
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && changes.clipmind_settings) {
+    bubbleEnabled = changes.clipmind_settings.newValue?.showSelectionBubble !== false;
+  }
+});
 
 function isEditableElement(el: Element | null): boolean {
   if (!el) return false;
@@ -17,6 +34,8 @@ function getSelectedText(): string {
 }
 
 function handleMouseUp(e: MouseEvent): void {
+  if (!bubbleEnabled) return;
+
   if (isEditableElement(e.target as Element)) {
     bubble.hide();
     return;

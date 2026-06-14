@@ -56,7 +56,8 @@ export type MessageType =
   | 'CLIP_DUPLICATE'
   | 'CLIP_ERROR'
   | 'SHOW_TOAST'
-  | 'OPEN_SIDE_PANEL';
+  | 'OPEN_SIDE_PANEL'
+  | 'GET_SETTINGS';
 
 export interface ExtensionMessage {
   type: MessageType;

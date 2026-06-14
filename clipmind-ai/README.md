@@ -75,6 +75,11 @@ Rebuilds on file changes. Reload the extension in `chrome://extensions` after ea
 2. Search, filter, and manage all your clips
 3. Use **Ask My Memory** to query your saved knowledge
 
+### Settings
+1. Click ⚙️ in the popup or dashboard, or right-click the extension → **Options**
+2. Choose AI provider (Mock, OpenAI, Gemini, Claude)
+3. Toggle dark mode and selection bubble preferences
+
 ## Project Structure
 
 ```
@@ -108,6 +113,9 @@ To connect a real AI provider:
 Placeholder files included:
 - `openAiProvider.placeholder.ts`
 - `geminiProvider.placeholder.ts`
+- `claudeProvider.placeholder.ts`
+
+Configure your provider in **Settings** (right-click extension icon → Options, or ⚙️ in popup/dashboard).
 
 ### Mock AI Features
 - Title generation from content keywords
