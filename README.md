@@ -1,0 +1,1 @@
+# ClipMInd-AI-extension
