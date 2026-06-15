@@ -354,3 +354,18 @@ body {
   background: var(--tp-border);
   margin: 12px 0;
 }
+
+.tp-verdict {
+  padding: 14px;
+  border-radius: var(--tp-radius);
+  border: 2px solid var(--tp-border);
+  margin-bottom: 12px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.tp-verdict.buy { border-color: var(--tp-success); background: rgba(16, 185, 129, 0.12); }
+.tp-verdict.dip, .tp-verdict.hold { border-color: var(--tp-warning); background: rgba(245, 158, 11, 0.12); }
+.tp-verdict.avoid, .tp-verdict.sell { border-color: var(--tp-danger); background: rgba(239, 68, 68, 0.12); }
+.tp-verdict .title { font-size: 16px; font-weight: 800; margin-bottom: 6px; }
+.tp-verdict .sub { font-size: 11px; color: var(--tp-text-muted); }

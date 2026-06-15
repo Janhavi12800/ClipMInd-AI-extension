@@ -4,17 +4,20 @@
 
 import { generateSmartAnalysis, getAnalysisVerdict } from './smart-analysis.js';
 import { fetchMarketData, fetchVolatilityMetrics } from './market-data.js';
+import { resolveSymbol } from './symbol-resolver.js';
 
 export async function buildMarketMeta({ symbol, market, timeframe }) {
   if (!symbol || !market) return {};
 
+  const resolved = resolveSymbol(symbol, market);
+
   const [quote, metrics] = await Promise.all([
-    fetchMarketData(market, symbol),
-    fetchVolatilityMetrics(market, symbol, timeframe || '15m')
+    fetchMarketData(market, resolved),
+    fetchVolatilityMetrics(market, resolved, timeframe || '15m')
   ]);
 
   return {
-    symbol: symbol.toUpperCase(),
+    symbol: resolved.toUpperCase(),
     market,
     timeframe: timeframe || '15m',
     spotPrice: quote?.price || metrics?.spotPrice,

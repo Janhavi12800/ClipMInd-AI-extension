@@ -39,6 +39,21 @@
     .verdict.buy{background:rgba(16,185,129,.12);border-color:#10b981}
     .verdict.hold,.verdict.dip{background:rgba(245,158,11,.12);border-color:#f59e0b}
     .verdict.avoid,.verdict.sell{background:rgba(239,68,68,.12);border-color:#ef4444}
+    .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+    .chip{padding:6px 11px;background:#334155;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid var(--border)}
+    .chip:hover,.chip.on{border-color:var(--p);background:rgba(99,102,241,.25)}
+    .quote{display:none;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 14px;background:#0a0f1e;border:1px solid var(--border);border-radius:10px;margin-top:12px}
+    .quote.show{display:flex}
+    .quote .price{font-size:22px;font-weight:800}
+    .quote .lbl{font-size:11px;color:var(--muted);text-transform:uppercase}
+    .quote.up .chg{color:#10b981}
+    .quote.down .chg{color:#ef4444}
+    .btn-advice{background:linear-gradient(135deg,#10b981,#059669)!important;color:#fff!important;font-size:15px}
+    .hist{font-size:12px;color:var(--muted);margin-top:8px}
+    .hist span{cursor:pointer;margin-right:12px;color:var(--p)}
+    .v-levels{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px;font-size:12px}
+    .v-levels div{background:rgba(0,0,0,.25);padding:8px;border-radius:8px;text-align:center}
+    .v-levels b{display:block;font-size:14px;color:var(--text)}
   </style>
 </head>
 <body>
@@ -69,10 +84,17 @@
       <div class="tab" data-m="crypto">₿ Crypto</div>
     </div>
     <div class="grid2" style="margin-top:12px">
-      <div><div class="title">Symbol</div><input id="symbol" value="RELIANCE"></div>
+      <div><div class="title">Symbol (YES BANK bhi likh sakte ho)</div><input id="symbol" value="RELIANCE" placeholder="YESBANK, YES BANK, RELIANCE..."></div>
       <div><div class="title">Timeframe</div>
         <select id="tf"><option>1m</option><option>5m</option><option selected>15m</option><option>1h</option><option>4h</option><option>1D</option></select>
       </div>
+    </div>
+    <div class="title" style="margin-top:12px">Popular — 1 click</div>
+    <div class="chips" id="chips"></div>
+    <div class="quote" id="quote">
+      <div><div class="lbl">Live Price</div><div class="price" id="qPrice">—</div></div>
+      <div><div class="lbl">Change</div><div class="chg" id="qChg">—</div></div>
+      <div><div class="lbl">Market</div><div id="qMkt">—</div></div>
     </div>
   </div>
 
@@ -86,14 +108,24 @@
     <div id="verdict" class="verdict"></div>
     <div class="out" id="output">Template select karo ya neeche button dabao...</div>
     <div class="row">
-      <button class="btn btn-s" onclick="copyOut()">📋 Copy</button>
-      <button class="btn btn-p" onclick="runAI()">🤖 AI Analysis Chalao</button>
+      <button class="btn btn-advice" onclick="quickAdvice()">🛒 Abhi Advice Lo — Khareedu ya Nahi?</button>
     </div>
+    <div class="row">
+      <button class="btn btn-s" onclick="copyOut()">📋 Copy</button>
+      <button class="btn btn-p" onclick="runAI()">🤖 Full AI Analysis</button>
+    </div>
+    <div class="hist" id="history"></div>
     <div class="ok" id="aiStatus"></div>
   </div>
 </div>
 
 <script>
+const POPULAR={
+india:[{sym:'YESBANK',label:'YES Bank'},{sym:'RELIANCE',label:'Reliance'},{sym:'TCS',label:'TCS'},{sym:'HDFCBANK',label:'HDFC'},{sym:'INFY',label:'Infosys'},{sym:'TATAMOTORS',label:'Tata Motors'},{sym:'SBIN',label:'SBI'}],
+forex:[{sym:'EUR/USD',label:'EUR/USD'},{sym:'GBP/USD',label:'GBP/USD'},{sym:'USD/JPY',label:'USD/JPY'},{sym:'USD/INR',label:'USD/INR'}],
+crypto:[{sym:'BTC/USDT',label:'Bitcoin'},{sym:'ETH/USDT',label:'Ethereum'},{sym:'SOL/USDT',label:'Solana'}]
+};
+
 const TPL={
 india:[
 {id:'buy',n:'🛒 Khareedna Chahiye? (Buy / Hold / Avoid)',t:`Should I buy {symbol} right now on {tf}? Give CLEAR verdict.\n\nIST: {time} | Market: {status}\n\nRequired answer:\n1. VERDICT: BUY / BUY ON DIP / HOLD / AVOID — khareed sakte ho ya nahi\n2. 3 reasons (Hindi+English)\n3. Entry zone, Stop Loss, Target 1 & 2\n4. Confidence 1-10\nCapital: ₹1,00,000 | Risk: 1% per trade.`},
@@ -116,6 +148,46 @@ crypto:[
 ]};
 
 let market='india';
+let quoteTimer=null;
+
+function renderChips(){
+  document.getElementById('chips').innerHTML=POPULAR[market].map(s=>`<span class="chip" onclick="pickStock('${s.sym}')">${s.label}</span>`).join('');
+}
+function pickStock(sym){
+  document.getElementById('symbol').value=sym;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c.textContent.includes(sym)||c.onclick.toString().includes(sym)));
+  pick(0);
+  loadQuote();
+}
+function saveHist(sym){
+  let h=JSON.parse(localStorage.getItem('tp_hist')||'[]');
+  h=[sym,...h.filter(x=>x!==sym)].slice(0,5);
+  localStorage.setItem('tp_hist',JSON.stringify(h));
+  renderHist();
+}
+function renderHist(){
+  const h=JSON.parse(localStorage.getItem('tp_hist')||'[]');
+  document.getElementById('history').innerHTML=h.length?('Recent: '+h.map(s=>`<span onclick="pickStock('${s}')">${s}</span>`).join('')):'';
+}
+async function loadQuote(){
+  const sym=document.getElementById('symbol').value.trim();
+  if(!sym)return;
+  try{
+    const r=await fetch(`/api/quote?symbol=${encodeURIComponent(sym)}&market=${market}`);
+    const d=await r.json();
+    const q=document.getElementById('quote');
+    if(!d.quote?.price){q.classList.remove('show');return;}
+    q.classList.add('show');
+    const p=d.quote.price;
+    const chg=d.quote.change||d.quote.change24h||'—';
+    const isUp=!String(chg).includes('-');
+    q.className='quote show '+(isUp?'up':'down');
+    const fmt=market==='india'?'₹'+Number(p).toLocaleString('en-IN',{maximumFractionDigits:2}):market==='forex'?Number(p).toFixed(4):'$'+Number(p).toLocaleString('en-US',{maximumFractionDigits:2});
+    document.getElementById('qPrice').textContent=fmt;
+    document.getElementById('qChg').textContent=chg;
+    document.getElementById('qMkt').textContent={india:'🇮🇳 NSE',forex:'💱 Forex',crypto:'₿ Crypto'}[market];
+  }catch{document.getElementById('quote').classList.remove('show');}
+}
 
 function ist(){return new Date().toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})}
 function mstatus(){const n=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Kolkata'}));const d=n.getDay(),t=n.getHours()*60+n.getMinutes();if(d===0||d===6)return'CLOSED';if(t>=555&&t<570)return'PRE-OPEN';if(t>=570&&t<930)return'OPEN';return'CLOSED'}
@@ -137,7 +209,7 @@ document.getElementById('markets').onclick=e=>{
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
   t.classList.add('on');market=t.dataset.m;
   const defs={india:'RELIANCE',forex:'EUR/USD',crypto:'BTC/USDT'};
-  document.getElementById('symbol').value=defs[market];renderTpl();
+  document.getElementById('symbol').value=defs[market];renderTpl();renderChips();loadQuote();
 };
 
 function saveKey(){
@@ -152,10 +224,33 @@ function showVerdict(v){
   if(!v){el.className='verdict';el.innerHTML='';return;}
   const cls=v.action==='BUY'?'buy':v.action==='BUY ON DIP'?'dip':v.action==='AVOID'?'avoid':v.action==='SELL / EXIT'?'sell':'hold';
   el.className='verdict show '+cls;
+  const lv=v.targets?`<div class="v-levels"><div>SL<b>${v.targets.sl||'—'}</b></div><div>Target 1<b>${v.targets.t1||'—'}</b></div><div>Target 2<b>${v.targets.t2||'—'}</b></div></div>`:'';
+  const mtf=v.multiTimeframe?`<div class="v-sub">Multi-TF: ${(v.timeframes||[]).join(' + ')}</div>`:'';
   el.innerHTML=`<div class="v-title">${v.emoji} ${v.actionHi}</div>
-<div class="v-sub">Signal: ${v.action} | Confidence: ${v.confidence}/10 | ${v.symbol} (${v.timeframe})</div>
+<div class="v-sub">Signal: ${v.action} | Confidence: ${v.confidence}/10 | ${v.symbol} (${v.timeframe||'multi'})</div>${mtf}
 <div class="v-detail">${v.actionDetail}</div>
-<div class="v-reasons">${(v.reasons||[]).map(r=>'• '+r).join('<br>')}</div>`;
+<div class="v-reasons">${(v.reasons||[]).map(r=>'• '+r).join('<br>')}</div>${lv}`;
+}
+
+async function quickAdvice(){
+  const sym=document.getElementById('symbol').value.trim();
+  const tf=document.getElementById('tf').value;
+  if(!sym){document.getElementById('aiStatus').textContent='Symbol daalo';return;}
+  document.getElementById('aiStatus').textContent='⏳ '+sym+' advice...';
+  document.getElementById('output').textContent='Loading advice...';
+  showVerdict(null);
+  try{
+    const res=await fetch('/api/advice',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({symbol:sym,market,timeframe:tf})});
+    const data=await res.json();
+    if(data.symbol) document.getElementById('symbol').value=data.symbol;
+    if(data.verdict) showVerdict(data.verdict);
+    document.getElementById('output').textContent=data.content||'';
+    document.getElementById('aiStatus').textContent='✅ '+(data.verdict?.actionHi||'Done');
+    saveHist(data.symbol||sym);
+    loadQuote();
+  }catch(e){
+    document.getElementById('aiStatus').textContent='Retry karo';
+  }
 }
 
 async function runAI(){
@@ -172,15 +267,29 @@ async function runAI(){
     document.getElementById('output').textContent=data.content||prompt;
     const v=data.verdict?.actionHi||'Analysis ready';
     document.getElementById('aiStatus').textContent='✅ '+v+(data.meta?.spotPrice?' — live data ✓':'');
+    saveHist(ctx.symbol);
+    loadQuote();
   }catch(e){
     document.getElementById('output').textContent=prompt;
     document.getElementById('aiStatus').textContent='✅ Prompt ready';
   }
 }
 
+document.getElementById('symbol').addEventListener('input',()=>{clearTimeout(quoteTimer);quoteTimer=setTimeout(loadQuote,600);});
+document.getElementById('symbol').addEventListener('keydown',e=>{if(e.key==='Enter')quickAdvice();});
+document.getElementById('tf').addEventListener('change',loadQuote);
+
+function loadUrlParams(){
+  const p=new URLSearchParams(location.search);
+  if(p.get('market')){market=p.get('market');document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x.dataset.m===market));}
+  if(p.get('symbol')) document.getElementById('symbol').value=p.get('symbol');
+  if(p.get('tf')) document.getElementById('tf').value=p.get('tf');
+  if(p.get('advice')==='1') setTimeout(quickAdvice,500);
+}
+
 // init
 if(localStorage.getItem('tp_key')){document.getElementById('apiKey').value=localStorage.getItem('tp_key');document.getElementById('keyStatus').textContent='✅ API key loaded';}
-renderTpl();
+renderTpl();renderChips();renderHist();loadUrlParams();pick(0);loadQuote();
 </script>
 </body>
 </html>

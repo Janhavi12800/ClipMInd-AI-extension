@@ -2,6 +2,8 @@
  * Backend market data — Yahoo Finance + CoinGecko
  */
 
+import { resolveSymbol } from './symbol-resolver.js';
+
 function calculateATR(highs, lows, closes, period = 14) {
   if (highs.length < period + 1) return null;
   const trueRanges = [];
@@ -17,10 +19,11 @@ function calculateATR(highs, lows, closes, period = 14) {
 }
 
 export async function fetchMarketData(market, symbol) {
+  const resolved = resolveSymbol(symbol, market);
   switch (market) {
-    case 'crypto': return fetchCryptoQuote(symbol);
-    case 'india': return fetchIndiaQuote(symbol);
-    case 'forex': return fetchForexQuote(symbol);
+    case 'crypto': return fetchCryptoQuote(resolved);
+    case 'india': return fetchIndiaQuote(resolved);
+    case 'forex': return fetchForexQuote(resolved);
     default: return null;
   }
 }
@@ -113,12 +116,13 @@ function symbolToCoinId(symbol) {
 
 function toYahooSymbol(symbol, market) {
   if (!symbol) return '^NSEI';
-  const s = symbol.toUpperCase().replace(/\s+/g, '');
+  const resolved = resolveSymbol(symbol, market);
+  const s = resolved.toUpperCase().replace(/\s+/g, '');
 
   if (market === 'india') {
     const indexMap = { NIFTY: '^NSEI', NIFTY50: '^NSEI', BANKNIFTY: '^NSEBANK', SENSEX: '^BSESN' };
     if (indexMap[s]) return indexMap[s];
-    const clean = symbol.replace(/(NSE:|BSE:)/gi, '').replace(/\.(NS|BO)$/i, '');
+    const clean = resolved.replace(/(NSE:|BSE:)/gi, '').replace(/\.(NS|BO)$/i, '');
     if (clean.includes('NIFTY') && !clean.includes('BANK')) return '^NSEI';
     return `${clean}.NS`;
   }
@@ -143,7 +147,8 @@ function toYahooRange(interval) {
 }
 
 export async function fetchVolatilityMetrics(market, symbol, timeframe = '15m') {
-  const yahooSymbol = toYahooSymbol(symbol, market);
+  const resolved = resolveSymbol(symbol, market);
+  const yahooSymbol = toYahooSymbol(resolved, market);
   const interval = toYahooInterval(timeframe);
   const range = toYahooRange(interval);
 

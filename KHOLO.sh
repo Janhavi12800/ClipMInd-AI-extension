@@ -32,6 +32,14 @@ if [ -z "$PROJECT" ]; then
 fi
 
 echo "📁 Folder: $PROJECT"
+cd "$PROJECT" || exit 1
+
+# --- latest code (agar git repo ho) ---
+if [ -d .git ] && command -v git &>/dev/null; then
+  echo "🔄 Latest code pull..."
+  git pull origin main 2>/dev/null || true
+fi
+
 cd "$PROJECT/backend" || exit 1
 
 # --- node check ---
@@ -83,7 +91,7 @@ echo ""
 echo "╔══════════════════════════════════════════════════════╗"
 echo "║  BROWSER MEIN YE ADDRESS BAR MEIN LIKHO (copy):      ║"
 echo "║                                                      ║"
-echo "║    http://127.0.0.1:3001/app.html                    ║"
+echo "║    http://127.0.0.1:3001/app.html?symbol=YESBANK&advice=1 ║"
 echo "║                                                      ║"
 echo "╚══════════════════════════════════════════════════════╝"
 echo ""

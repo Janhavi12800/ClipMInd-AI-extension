@@ -112,7 +112,77 @@ export function computeVerdict({ spot, change, levels, market, symbol, timeframe
     reasons,
     invalidation,
     entry,
+    targets: levels ? { sl: levels.sl, t1: levels.target1, t2: levels.target2 } : null,
     summary: `${emoji} ${actionHi} — ${symbol} (${timeframe}) | Confidence ${confidence}/10`
+  };
+}
+
+const ACTION_SCORE = {
+  BUY: 3,
+  'BUY ON DIP': 2,
+  HOLD: 0,
+  'SELL / EXIT': -2,
+  AVOID: -3
+};
+
+export function combineVerdicts(primary, secondary) {
+  if (!primary) return secondary;
+  if (!secondary) return primary;
+
+  const pScore = ACTION_SCORE[primary.action] ?? 0;
+  const sScore = ACTION_SCORE[secondary.action] ?? 0;
+  const avg = (pScore + sScore) / 2;
+
+  let action;
+  let actionHi;
+  let emoji;
+  let actionDetail;
+
+  if (avg >= 2.5) {
+    action = 'BUY';
+    actionHi = 'HAAN — KHAREED SAKTE HO';
+    emoji = '🟢';
+    actionDetail = `1D + ${secondary.timeframe} dono bullish align — strong buy setup.`;
+  } else if (avg >= 1) {
+    action = 'BUY ON DIP';
+    actionHi = 'DIP PE KHAREEDO — THODA WAIT';
+    emoji = '🟡';
+    actionDetail = `Long-term OK, short-term wait. ${primary.timeframe} + ${secondary.timeframe} mixed-positive.`;
+  } else if (avg <= -2) {
+    action = 'AVOID';
+    actionHi = 'NAHI — ABHI MAT KHAREEDO';
+    emoji = '🔴';
+    actionDetail = `Dono timeframes weak — ${primary.timeframe} & ${secondary.timeframe} bearish.`;
+  } else if (avg <= -0.5) {
+    action = 'SELL / EXIT';
+    actionHi = 'BECHO YA EXIT — WEAK';
+    emoji = '🟠';
+    actionDetail = 'Short aur long dono weak signals de rahe hain.';
+  } else {
+    action = 'HOLD';
+    actionHi = 'HOLD / WAIT — CLEAR NAHI';
+    emoji = '🟡';
+    actionDetail = `${primary.timeframe} vs ${secondary.timeframe} mixed — breakout ka wait karo.`;
+  }
+
+  const confidence = Math.round((primary.confidence + secondary.confidence) / 2);
+  const reasons = [
+    `${primary.timeframe}: ${primary.action} (${primary.confidence}/10)`,
+    `${secondary.timeframe}: ${secondary.action} (${secondary.confidence}/10)`,
+    ...primary.reasons.slice(0, 2)
+  ];
+
+  return {
+    ...primary,
+    action,
+    actionHi,
+    emoji,
+    actionDetail,
+    confidence,
+    reasons,
+    multiTimeframe: true,
+    timeframes: [primary.timeframe, secondary.timeframe],
+    summary: `${emoji} ${actionHi} — ${primary.symbol} | Confidence ${confidence}/10`
   };
 }
 
