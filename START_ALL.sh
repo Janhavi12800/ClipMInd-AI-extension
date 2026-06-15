@@ -57,22 +57,26 @@ grep -q '^DEMO_MODE=' .env && sed -i 's/^DEMO_MODE=.*/DEMO_MODE=true/' .env || e
 
 fuser -k 3001/tcp 2>/dev/null || lsof -ti:3001 | xargs kill -9 2>/dev/null || true
 sleep 1
-nohup npm run dev > /tmp/tradeprompt.log 2>&1 &
+nohup node src/server.js > /tmp/tradeprompt.log 2>&1 &
 
 for i in 1 2 3 4 5 6 7 8 9 10; do
   curl -sf http://localhost:3001/api/health >/dev/null && OK=1 && break
   sleep 1
 done
 
-URL="http://localhost:3001/app.html"
+URL="http://127.0.0.1:3001/app.html"
 echo ""
 if [ "$OK" = "1" ]; then
-  echo "✅ Backend ready — koi error nahi"
+  echo "✅ Backend ready!"
 else
-  echo "⚠️  Backend starting... open: $URL"
+  echo "⚠️  Try: bash KHOLO.sh"
 fi
 echo ""
-echo "  🌐 $URL"
-echo "  Extension: chrome://extensions → Reload"
+echo "  ══════════════════════════════════════"
+echo "  BROWSER MEIN YE PASTE KARO:"
+echo "  $URL"
+echo "  ══════════════════════════════════════"
 echo ""
-xdg-open "$URL" 2>/dev/null || sensible-browser "$URL" 2>/dev/null || true
+for CMD in xdg-open google-chrome google-chrome-stable chromium firefox; do
+  command -v $CMD &>/dev/null && $CMD "$URL" 2>/dev/null && break
+done

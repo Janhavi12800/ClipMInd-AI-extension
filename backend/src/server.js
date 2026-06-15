@@ -352,8 +352,10 @@ app.get('/subscribe', (req, res) => {
 
 createAdminRoutes(app, store);
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`TradePrompt AI Backend → ${API_BASE_URL}`);
+  console.log(`Open app: http://127.0.0.1:${PORT}/app.html`);
+  console.log(`         http://localhost:${PORT}/app.html`);
   console.log(`Razorpay: ${razorpay ? 'Configured' : 'Demo mode (instant free trial)'}`);
   console.log(`App: ${API_BASE_URL}/app.html`);
   console.log(`AI: ${(process.env.OPENAI_API_KEY || '').startsWith('sk-') ? 'OpenAI configured' : 'Smart engine (no key needed)'}`);
