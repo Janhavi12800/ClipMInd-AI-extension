@@ -1,6 +1,23 @@
 # TradePrompt AI — Ab Seedha Chalega
 
-## ⚡ SELL READY (Sabse Pehle Ye Chalao)
+## 🚀 GO LIVE (Production Sell)
+
+```bash
+cd ~/ClipMInd-AI-extension
+git pull
+bash GO_LIVE.sh
+```
+
+Deploy ke baad:
+```bash
+bash GO_LIVE.sh https://YOUR-APP.onrender.com
+```
+
+Guide: **docs/GO_LIVE_HINDI.md**
+
+---
+
+## ⚡ SELL READY (Local Demo)
 
 ```bash
 cd ~/ClipMInd-AI-extension

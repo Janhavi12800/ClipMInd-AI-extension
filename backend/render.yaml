@@ -2,6 +2,7 @@ services:
   - type: web
     name: tradeprompt-api
     runtime: node
+    rootDir: backend
     buildCommand: npm install
     startCommand: node src/server.js
     healthCheckPath: /api/health
@@ -10,6 +11,30 @@ services:
         value: production
       - key: PORT
         value: 3001
+      - key: DEMO_MODE
+        value: false
+      - key: TRIAL_DAYS
+        value: 3
+      - key: SUBSCRIPTION_AMOUNT
+        value: 10000
+      - key: SUBSCRIPTION_CURRENCY
+        value: INR
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ADMIN_SECRET
+        generateValue: true
+      - key: API_BASE_URL
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_PLAN_ID
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
     disk:
       name: tradeprompt-data
       mountPath: /app/data

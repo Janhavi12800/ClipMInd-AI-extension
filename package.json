@@ -11,6 +11,8 @@
     "verify:youtube-prompt": "node scripts/validate-youtube-prompt.mjs",
     "sell:ready": "bash SELL_READY.sh",
     "sell:test": "node scripts/sell-ready-test.mjs",
+    "go:live": "bash GO_LIVE.sh",
+    "build:store": "bash scripts/build-store.sh",
     "build": "bash scripts/build-extension.sh",
     "assets": "python3 scripts/generate-store-assets.py",
     "start": "npm run setup && npm run dev"

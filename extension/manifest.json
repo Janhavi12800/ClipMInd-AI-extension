@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "TradePrompt AI — Smart Trading Prompts",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Professional AI prompt engineering for Indian stocks (NSE/BSE), Forex & Crypto. 1-click chart analysis with vision AI.",
   "permissions": [
     "storage",
@@ -20,6 +20,9 @@
     "https://api.openai.com/*",
     "https://api.anthropic.com/*",
     "https://api.tradeprompt.ai/*",
+    "https://*.onrender.com/*",
+    "https://*.up.railway.app/*",
+    "https://*.railway.app/*",
     "https://query1.finance.yahoo.com/*",
     "https://query2.finance.yahoo.com/*",
     "https://api.frankfurter.app/*",
@@ -28,6 +31,8 @@
   "externally_connectable": {
     "matches": [
       "https://api.tradeprompt.ai/*",
+      "https://*.onrender.com/*",
+      "https://*.up.railway.app/*",
       "http://localhost:3001/*"
     ]
   },
