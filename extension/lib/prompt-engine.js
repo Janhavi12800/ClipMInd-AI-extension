@@ -6,6 +6,7 @@
 import { INDIA_PROMPT_TEMPLATES, getMarketStatus, getSessionPhase, formatISTTime } from './markets/india.js';
 import { FOREX_PROMPT_TEMPLATES, getActiveForexSession, getSessionOverlap } from './markets/forex.js';
 import { CRYPTO_PROMPT_TEMPLATES, fetchFearGreed } from './markets/crypto.js';
+import { enrichPromptVariables } from './market-data.js';
 
 // Fix typo - I used INDIA_PROMET_TEMPLATES by mistake, should be INDIA_PROMPT_TEMPLATES only
 
@@ -108,7 +109,8 @@ export class PromptEngine {
     }
 
     const contextVars = await this._gatherMarketContext(market, variables);
-    const allVars = { ...this._getDefaultVars(), ...contextVars, ...variables };
+    const enrichedVars = await enrichPromptVariables(market, { ...variables, ...contextVars });
+    const allVars = { ...this._getDefaultVars(), ...enrichedVars };
 
     let userPrompt = this._interpolate(template.template, allVars);
     const mode = ANALYSIS_MODES[options.mode?.toUpperCase()] || ANALYSIS_MODES.DEEP_ANALYSIS;

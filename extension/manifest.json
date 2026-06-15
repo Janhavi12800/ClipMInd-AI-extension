@@ -15,9 +15,19 @@
     "https://*.tradingview.com/*",
     "https://in.tradingview.com/*",
     "https://www.nseindia.com/*",
+    "https://api.coingecko.com/*",
+    "https://api.alternative.me/*",
+    "https://api.openai.com/*",
+    "https://api.anthropic.com/*",
     "https://api.tradeprompt.ai/*",
     "http://localhost:3001/*"
   ],
+  "externally_connectable": {
+    "matches": [
+      "https://api.tradeprompt.ai/*",
+      "http://localhost:3001/*"
+    ]
+  },
   "background": {
     "service_worker": "background/service-worker.js",
     "type": "module"

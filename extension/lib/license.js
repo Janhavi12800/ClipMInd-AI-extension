@@ -3,6 +3,8 @@
  * 3-day trial → ₹100/month via Razorpay
  */
 
+import { getApiBaseUrl } from './config.js';
+
 const TRIAL_DAYS = 3;
 const SUBSCRIPTION_PRICE = 100; // INR
 const STORAGE_KEYS = {
@@ -47,8 +49,8 @@ export const PLAN = {
 };
 
 export class LicenseManager {
-  constructor(apiBaseUrl = 'http://localhost:3001') {
-    this.apiBaseUrl = apiBaseUrl;
+  constructor(apiBaseUrl) {
+    this.apiBaseUrl = apiBaseUrl || getApiBaseUrl();
   }
 
   async initialize() {
@@ -159,12 +161,41 @@ export class LicenseManager {
   }
 
   async activateSubscription(licenseData) {
+    const expiry = typeof licenseData.expiry === 'number'
+      ? licenseData.expiry
+      : new Date(licenseData.expiry).getTime();
+
     await chrome.storage.local.set({
       [STORAGE_KEYS.licenseKey]: licenseData.licenseKey,
       [STORAGE_KEYS.subscriptionStatus]: LICENSE_STATUS.ACTIVE,
-      [STORAGE_KEYS.subscriptionExpiry]: licenseData.expiry,
-      [STORAGE_KEYS.userEmail]: licenseData.email
+      [STORAGE_KEYS.subscriptionExpiry]: expiry,
+      [STORAGE_KEYS.userEmail]: licenseData.email || ''
     });
+  }
+
+  async activateWithKey(licenseKey) {
+    const response = await fetch(`${this.apiBaseUrl}/api/activate-license`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ licenseKey })
+    });
+
+    const data = await response.json();
+    if (!data.success) throw new Error(data.message || 'Invalid license key');
+
+    await this.activateSubscription({
+      licenseKey: data.licenseKey,
+      expiry: new Date(data.expiry).getTime(),
+      email: data.email
+    });
+
+    return data;
+  }
+
+  getCheckoutUrl(email = '') {
+    const extId = chrome.runtime.id;
+    const params = new URLSearchParams({ email, ext_id: extId });
+    return `${this.apiBaseUrl}/checkout.html?${params}`;
   }
 
   async startSubscription(email) {

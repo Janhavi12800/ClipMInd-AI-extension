@@ -2,30 +2,34 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import crypto from 'crypto';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { v4 as uuidv4 } from 'uuid';
 import Razorpay from 'razorpay';
+import { LicenseStore } from './storage.js';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 3001;
+const API_BASE_URL = process.env.API_BASE_URL || `http://localhost:${PORT}`;
 
 app.use(cors({
-  origin: [/chrome-extension:\/\//, 'http://localhost:*'],
+  origin: [/chrome-extension:\/\//, /http:\/\/localhost/, /https:\/\/.*\.tradeprompt\.ai/],
   credentials: true
 }));
 app.use(express.json());
+app.use(express.static(path.join(__dirname, '..', 'public')));
 
 const TRIAL_DAYS = parseInt(process.env.TRIAL_DAYS || '3');
-const SUBSCRIPTION_AMOUNT = parseInt(process.env.SUBSCRIPTION_AMOUNT || '10000'); // paise (₹100)
+const SUBSCRIPTION_AMOUNT = parseInt(process.env.SUBSCRIPTION_AMOUNT || '10000');
+const store = new LicenseStore();
 
-const razorpay = process.env.RAZORPAY_KEY_ID
+const razorpay = process.env.RAZORPAY_KEY_ID && !process.env.RAZORPAY_KEY_ID.includes('YOUR')
   ? new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID,
       key_secret: process.env.RAZORPAY_KEY_SECRET
     })
   : null;
-
-const licenses = new Map();
-const subscriptions = new Map();
 
 const PLAN = {
   name: 'TradePrompt AI Pro',
@@ -35,34 +39,71 @@ const PLAN = {
   trialDays: TRIAL_DAYS
 };
 
+function createLicense(email, extra = {}) {
+  const licenseKey = `tp_${uuidv4().replace(/-/g, '').slice(0, 20)}`;
+  const expiry = new Date();
+  expiry.setMonth(expiry.getMonth() + 1);
+
+  store.setLicense(licenseKey, {
+    email,
+    createdAt: new Date().toISOString(),
+    expiry: expiry.toISOString(),
+    status: 'active',
+    plan: 'monthly',
+    ...extra
+  });
+
+  return { licenseKey, expiry };
+}
+
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', version: '1.0.0', plan: PLAN });
+  res.json({
+    status: 'ok',
+    version: '1.0.0',
+    plan: PLAN,
+    razorpay: !!razorpay,
+    apiBaseUrl: API_BASE_URL
+  });
+});
+
+app.get('/api/plans', (req, res) => {
+  res.json({
+    plans: [{
+      id: 'monthly',
+      name: PLAN.name,
+      price: PLAN.amount / 100,
+      currency: PLAN.currency,
+      interval: PLAN.period,
+      trialDays: PLAN.trialDays,
+      features: PLAN.features || [
+        'Unlimited 1-click prompt generation',
+        'Vision AI chart analysis',
+        'NSE/BSE, Forex & Crypto templates',
+        'Multi-indicator confluence',
+        'Volatility analysis engine',
+        'Priority updates'
+      ]
+    }]
+  });
 });
 
 app.post('/api/subscribe', async (req, res) => {
   try {
     const { email, plan = 'monthly' } = req.body;
-    if (!email) return res.status(400).json({ message: 'Email is required' });
+    if (!email || !email.includes('@')) {
+      return res.status(400).json({ message: 'Valid email is required' });
+    }
 
     if (!razorpay) {
-      const licenseKey = `tp_demo_${uuidv4().replace(/-/g, '').slice(0, 16)}`;
-      const expiry = new Date();
-      expiry.setDate(expiry.getDate() + 30);
-
-      licenses.set(licenseKey, {
-        email,
-        createdAt: new Date(),
-        expiry,
-        status: 'active',
-        plan: 'monthly'
-      });
-
+      const { licenseKey, expiry } = createLicense(email, { demo: true });
       return res.json({
         success: true,
         licenseKey,
         expiry: expiry.toISOString(),
-        message: 'Demo mode: License activated (configure Razorpay for production)',
-        demo: true
+        email,
+        demo: true,
+        message: 'Demo mode: License activated instantly',
+        activateUrl: `${API_BASE_URL}/success.html?license_key=${licenseKey}&expiry=${expiry.toISOString()}&email=${encodeURIComponent(email)}`
       });
     }
 
@@ -77,13 +118,18 @@ app.post('/api/subscribe', async (req, res) => {
       notes: { email, product: 'TradePrompt AI Pro' }
     });
 
-    subscriptions.set(subscription.id, { email, createdAt: new Date() });
+    store.setSubscription(subscription.id, {
+      email,
+      createdAt: new Date().toISOString(),
+      status: 'created'
+    });
 
     res.json({
       success: true,
       subscriptionId: subscription.id,
       keyId: process.env.RAZORPAY_KEY_ID,
-      checkoutUrl: `https://api.razorpay.com/v1/checkout/embedded?subscription_id=${subscription.id}`,
+      email,
+      checkoutUrl: `${API_BASE_URL}/checkout.html?subscription_id=${subscription.id}&email=${encodeURIComponent(email)}`,
       trialDays: TRIAL_DAYS,
       amount: SUBSCRIPTION_AMOUNT / 100,
       currency: 'INR'
@@ -102,7 +148,7 @@ app.post('/api/verify-payment', async (req, res) => {
       return res.status(400).json({ message: 'Razorpay not configured' });
     }
 
-    const body = razorpay_payment_id + '|' + razorpay_subscription_id;
+    const body = `${razorpay_payment_id}|${razorpay_subscription_id}`;
     const expectedSignature = crypto
       .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
       .update(body)
@@ -112,23 +158,24 @@ app.post('/api/verify-payment', async (req, res) => {
       return res.status(400).json({ message: 'Invalid payment signature' });
     }
 
-    const licenseKey = `tp_${uuidv4().replace(/-/g, '').slice(0, 20)}`;
-    const expiry = new Date();
-    expiry.setMonth(expiry.getMonth() + 1);
-
-    licenses.set(licenseKey, {
-      email,
+    const subData = store.getSubscription(razorpay_subscription_id);
+    const userEmail = email || subData?.email || 'unknown';
+    const { licenseKey, expiry } = createLicense(userEmail, {
       subscriptionId: razorpay_subscription_id,
-      paymentId: razorpay_payment_id,
-      createdAt: new Date(),
-      expiry,
-      status: 'active'
+      paymentId: razorpay_payment_id
+    });
+
+    store.setSubscription(razorpay_subscription_id, {
+      ...subData,
+      licenseKey,
+      status: 'authenticated'
     });
 
     res.json({
       success: true,
       licenseKey,
-      expiry: expiry.toISOString()
+      expiry: expiry.toISOString(),
+      email: userEmail
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -139,12 +186,12 @@ app.post('/api/verify', (req, res) => {
   const { licenseKey } = req.body;
   if (!licenseKey) return res.status(400).json({ valid: false });
 
-  const license = licenses.get(licenseKey);
+  const license = store.getLicense(licenseKey);
   if (!license) return res.json({ valid: false, message: 'License not found' });
 
   const now = new Date();
   const expiry = new Date(license.expiry);
-  const valid = now < expiry;
+  const valid = now < expiry && license.status !== 'cancelled';
 
   res.json({
     valid,
@@ -152,6 +199,27 @@ app.post('/api/verify', (req, res) => {
     daysRemaining: valid ? Math.ceil((expiry - now) / (24 * 60 * 60 * 1000)) : 0,
     status: valid ? 'active' : 'expired',
     email: license.email
+  });
+});
+
+app.post('/api/activate-license', (req, res) => {
+  const { licenseKey } = req.body;
+  const license = store.getLicense(licenseKey);
+
+  if (!license) {
+    return res.status(404).json({ success: false, message: 'Invalid license key' });
+  }
+
+  const now = new Date();
+  const expiry = new Date(license.expiry);
+  const valid = now < expiry && license.status !== 'cancelled';
+
+  res.json({
+    success: valid,
+    licenseKey,
+    expiry: license.expiry,
+    email: license.email,
+    status: valid ? 'active' : 'expired'
   });
 });
 
@@ -166,54 +234,31 @@ app.post('/api/webhook/razorpay', (req, res) => {
 
   const event = req.body.event;
   const payload = req.body.payload;
+  const subId = payload?.subscription?.entity?.id;
 
-  if (event === 'subscription.charged') {
-    const subId = payload.subscription?.entity?.id;
-    for (const [key, license] of licenses) {
-      if (license.subscriptionId === subId) {
-        const expiry = new Date(license.expiry);
-        expiry.setMonth(expiry.getMonth() + 1);
-        license.expiry = expiry;
-        licenses.set(key, license);
-      }
+  if (event === 'subscription.charged' && subId) {
+    const existing = store.findBySubscription(subId);
+    if (existing) {
+      store.extendLicense(subId, 1);
+    } else {
+      const email = payload.subscription?.entity?.notes?.email || 'webhook@user.com';
+      createLicense(email, { subscriptionId: subId });
     }
   }
 
-  if (event === 'subscription.cancelled') {
-    const subId = payload.subscription?.entity?.id;
-    for (const [key, license] of licenses) {
-      if (license.subscriptionId === subId) {
-        license.status = 'cancelled';
-        licenses.set(key, license);
-      }
-    }
+  if (event === 'subscription.cancelled' && subId) {
+    store.cancelLicense(subId);
   }
 
   res.json({ status: 'ok' });
 });
 
-app.get('/api/plans', (req, res) => {
-  res.json({
-    plans: [{
-      id: 'monthly',
-      name: PLAN.name,
-      price: PLAN.amount / 100,
-      currency: PLAN.currency,
-      interval: PLAN.period,
-      trialDays: PLAN.trialDays,
-      features: [
-        'Unlimited 1-click prompt generation',
-        'Vision AI chart analysis',
-        'NSE/BSE, Forex & Crypto templates',
-        'Multi-indicator confluence',
-        'Volatility analysis engine',
-        'Priority updates'
-      ]
-    }]
-  });
+app.get('/subscribe', (req, res) => {
+  res.redirect('/checkout.html');
 });
 
 app.listen(PORT, () => {
-  console.log(`TradePrompt AI Backend running on http://localhost:${PORT}`);
-  console.log(`Razorpay: ${razorpay ? 'Configured' : 'Demo mode (no Razorpay keys)'}`);
+  console.log(`TradePrompt AI Backend → ${API_BASE_URL}`);
+  console.log(`Razorpay: ${razorpay ? 'Live' : 'Demo mode'}`);
+  console.log(`Checkout: ${API_BASE_URL}/checkout.html`);
 });

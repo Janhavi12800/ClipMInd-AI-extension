@@ -99,14 +99,20 @@ npm run dev
 
 ## Documentation
 
-See [docs/DEVELOPMENT_GUIDEBOOK.md](docs/DEVELOPMENT_GUIDEBOOK.md) for:
-- AI prompt engineering landscape analysis
-- Competitive feature comparison
-- Multimodal vision AI architecture
-- Predictive prompting design
-- Market API integration guide
-- Backtesting methodology
-- Deployment & monetization guide
+| Document | Description |
+|----------|-------------|
+| [Development Guidebook](docs/DEVELOPMENT_GUIDEBOOK.md) | Full technical architecture & prompt design |
+| [Launch Checklist](docs/LAUNCH_CHECKLIST.md) | Step-by-step production deployment |
+| [Chrome Web Store Listing](docs/CHROME_WEB_STORE_LISTING.md) | Store submission copy & screenshots guide |
+| [Privacy Policy](docs/PRIVACY_POLICY.md) | Required for Chrome Web Store |
+| [Terms of Service](docs/TERMS_OF_SERVICE.md) | User agreement |
+
+## Build for Chrome Web Store
+
+```bash
+bash scripts/build-extension.sh
+# Output: dist/tradeprompt-ai-v1.0.0.zip
+```
 
 ## Disclaimer
 

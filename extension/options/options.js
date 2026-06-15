@@ -45,7 +45,7 @@ async function updateSubscriptionStatus() {
 }
 
 async function handleSubscribe() {
-  const email = $('#subEmail').value;
+  const email = $('#subEmail').value.trim();
   if (!email || !email.includes('@')) {
     showToast('Please enter a valid email');
     return;
@@ -56,16 +56,49 @@ async function handleSubscribe() {
 
   try {
     const result = await sendMessage('START_SUBSCRIPTION', { email });
+
+    if (result.demo && result.licenseKey) {
+      await sendMessage('ACTIVATE_SUBSCRIPTION', {
+        data: {
+          licenseKey: result.licenseKey,
+          expiry: new Date(result.expiry).getTime(),
+          email
+        }
+      });
+      showToast('Pro activated! ✓');
+      updateSubscriptionStatus();
+      return;
+    }
+
     if (result.checkoutUrl) {
       chrome.tabs.create({ url: result.checkoutUrl });
-    } else if (result.subscriptionId) {
-      showToast('Opening payment...');
+      showToast('Complete payment in the new tab');
+      return;
     }
+
+    const { url } = await sendMessage('GET_CHECKOUT_URL', { email });
+    chrome.tabs.create({ url });
   } catch (err) {
     showToast('Error: ' + err.message);
   } finally {
     $('#btnSubscribe').disabled = false;
     updateSubscriptionStatus();
+  }
+}
+
+async function handleActivateKey() {
+  const licenseKey = $('#licenseKeyInput').value.trim();
+  if (!licenseKey) {
+    showToast('Enter your license key');
+    return;
+  }
+
+  try {
+    await sendMessage('ACTIVATE_LICENSE_KEY', { licenseKey });
+    showToast('License activated! ✓');
+    updateSubscriptionStatus();
+  } catch (err) {
+    showToast('Error: ' + err.message);
   }
 }
 
@@ -120,6 +153,7 @@ function showToast(msg) {
 $('#btnSave').addEventListener('click', saveSettings);
 $('#btnTestAI').addEventListener('click', testAI);
 $('#btnSubscribe').addEventListener('click', handleSubscribe);
+$('#btnActivateKey').addEventListener('click', handleActivateKey);
 
 setupNav();
 loadSettings();

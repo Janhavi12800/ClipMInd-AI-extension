@@ -3,6 +3,7 @@
  */
 
 import { LicenseManager, LICENSE_STATUS } from '../lib/license.js';
+import { getApiBaseUrl } from '../lib/config.js';
 
 const licenseManager = new LicenseManager();
 
@@ -16,6 +17,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
       tp_riskPercent: 1,
       tp_capital: 100000
     });
+    chrome.tabs.create({ url: chrome.runtime.getURL('onboarding/onboarding.html') });
   }
 
   chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false });
@@ -64,6 +66,15 @@ async function handleMessage(message, sender) {
     case 'START_SUBSCRIPTION':
       return await licenseManager.startSubscription(message.email);
 
+    case 'ACTIVATE_LICENSE_KEY':
+      return await licenseManager.activateWithKey(message.licenseKey);
+
+    case 'GET_CHECKOUT_URL':
+      return { url: licenseManager.getCheckoutUrl(message.email || '') };
+
+    case 'GET_API_URL':
+      return { apiBaseUrl: getApiBaseUrl() };
+
     case 'OPEN_SIDE_PANEL':
       await chrome.sidePanel.open({ windowId: sender.tab?.windowId });
       return { success: true };
@@ -102,4 +113,13 @@ async function handleMessage(message, sender) {
 
 chrome.action.onClicked.addListener(async (tab) => {
   await chrome.sidePanel.open({ windowId: tab.windowId });
+});
+
+chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
+  if (message.type === 'ACTIVATE_SUBSCRIPTION' && message.data?.licenseKey) {
+    licenseManager.activateSubscription(message.data)
+      .then(() => sendResponse({ success: true }))
+      .catch(err => sendResponse({ success: false, error: err.message }));
+    return true;
+  }
 });
