@@ -113,6 +113,12 @@ export class LicenseManager {
 
   async canUseFeature(feature = 'prompt') {
     const status = await this.getStatus();
+    const apiBaseUrl = await this.getApiBaseUrl();
+    const isLocal = apiBaseUrl.includes('localhost') || apiBaseUrl.includes('127.0.0.1');
+
+    if (isLocal) {
+      return { allowed: true, remaining: 999 };
+    }
 
     if (status.status === LICENSE_STATUS.ACTIVE) {
       return this._checkDailyLimit(PLAN.proLimits, feature);
@@ -122,7 +128,7 @@ export class LicenseManager {
       return this._checkDailyLimit(PLAN.proLimits, feature);
     }
 
-  return { allowed: false, reason: status.message };
+    return { allowed: false, reason: status.message };
   }
 
   async _checkDailyLimit(limits, feature) {

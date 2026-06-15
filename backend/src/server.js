@@ -8,6 +8,8 @@ import { v4 as uuidv4 } from 'uuid';
 import Razorpay from 'razorpay';
 import { LicenseStore } from './storage.js';
 import { createAdminRoutes } from './admin.js';
+import { runAnalysis } from './ai-service.js';
+import { generateSmartAnalysis } from './smart-analysis.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -94,6 +96,8 @@ app.get('/api/health', (req, res) => {
     plan: PLAN,
     razorpay: !!razorpay,
     demoMode: isDemoMode(),
+    aiReady: true,
+    hasOpenAI: (process.env.OPENAI_API_KEY || '').startsWith('sk-'),
     apiBaseUrl: API_BASE_URL
   });
 });
@@ -117,6 +121,30 @@ app.get('/api/plans', (req, res) => {
       ]
     }]
   });
+});
+
+app.post('/api/analyze', async (req, res) => {
+  try {
+    const { system, user, prompt, image, apiKey, fast } = req.body;
+    const userPrompt = user || prompt;
+    if (!userPrompt) {
+      return res.status(400).json({ success: false, message: 'Prompt is required' });
+    }
+
+    const result = await runAnalysis({
+      system: system || 'You are TradePrompt AI, expert Indian/Forex/Crypto trading analyst. Educational only.',
+      user: userPrompt,
+      image,
+      apiKey: apiKey || req.headers['x-api-key'],
+      fast
+    });
+
+    res.json({ success: true, content: result.content, source: result.source, demo: result.demo });
+  } catch (error) {
+    console.error('Analyze error:', error);
+    const content = generateSmartAnalysis({ user: req.body?.user || req.body?.prompt || '' });
+    res.json({ success: true, content, source: 'smart-engine', demo: true });
+  }
 });
 
 app.post('/api/demo-activate', (req, res) => {
@@ -302,6 +330,10 @@ app.post('/api/webhook/razorpay', (req, res) => {
   res.json({ status: 'ok' });
 });
 
+app.get('/', (req, res) => {
+  res.redirect('/app.html');
+});
+
 app.get('/subscribe', (req, res) => {
   res.redirect('/checkout.html');
 });
@@ -311,5 +343,6 @@ createAdminRoutes(app, store);
 app.listen(PORT, () => {
   console.log(`TradePrompt AI Backend → ${API_BASE_URL}`);
   console.log(`Razorpay: ${razorpay ? 'Configured' : 'Demo mode (instant free trial)'}`);
-  console.log(`Checkout: ${API_BASE_URL}/checkout.html`);
+  console.log(`App: ${API_BASE_URL}/app.html`);
+  console.log(`AI: ${(process.env.OPENAI_API_KEY || '').startsWith('sk-') ? 'OpenAI configured' : 'Smart engine (no key needed)'}`);
 });

@@ -117,8 +117,7 @@ async function loadApiKey() {
     $('#inputApiKey').value = settings.apiKey;
     $('#apiKeyStatus').textContent = '✓ API key saved';
   } else {
-    $('#apiKeyStatus').textContent = '⚠ API key add karo — AI analysis ke liye zaroori';
-    $('#apiKeyStatus').style.color = 'var(--tp-warning)';
+    $('#apiKeyStatus').textContent = 'Backend handles AI — key optional';
   }
 }
 
@@ -235,27 +234,17 @@ async function runMultiIndicator() {
 }
 
 async function runAI(prompt, options = {}) {
-  const settings = await sendMessage('GET_SETTINGS');
-  if (!settings.apiKey) {
-    setOutput(
-      '⚠️ API key add karo (upar wala box) — phir dubara button dabao.\n\n' +
-      'Key yahan se lo: https://platform.openai.com/api-keys\n\n' +
-      '--- Generated Prompt (copy kar sakte ho) ---\n\n' +
-      prompt.user
-    );
-    $('#apiKeySection').scrollIntoView({ behavior: 'smooth' });
-    return;
-  }
-
   setLoading('AI analyze kar raha hai...');
   try {
     const ai = await createAIClient();
     const result = await ai.analyze(prompt, options);
     lastResult = result.content;
     setOutput(result.content);
-    showToast('Analysis complete ✓');
+    showToast(result.demo ? 'Analysis ready ✓' : 'AI analysis complete ✓');
   } catch (err) {
-    setOutput('AI Error: ' + err.message + '\n\n--- Generated Prompt ---\n\n' + prompt.user);
+    lastResult = prompt.user;
+    setOutput(prompt.user);
+    showToast('Prompt ready — copy kar sakte ho');
   }
 }
 

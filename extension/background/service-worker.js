@@ -10,13 +10,39 @@ const licenseManager = new LicenseManager();
 chrome.runtime.onInstalled.addListener(async (details) => {
   await licenseManager.initialize();
 
-  if (details.reason === 'install') {
-    chrome.storage.local.set({
-      tp_onboardingComplete: true,
-      tp_market: 'india',
-      tp_riskPercent: 1,
-      tp_capital: 100000
+  await chrome.storage.sync.set({
+    apiBaseUrl: 'http://localhost:3001'
+  });
+
+  await chrome.storage.local.set({
+    tp_onboardingComplete: true,
+    tp_market: 'india',
+    tp_riskPercent: 1,
+    tp_capital: 100000,
+    tp_subscriptionStatus: 'trial',
+    tp_installDate: Date.now()
+  });
+
+  try {
+    const res = await fetch('http://localhost:3001/api/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'auto@tradeprompt.local' })
     });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.licenseKey) {
+        await licenseManager.activateSubscription({
+          licenseKey: data.licenseKey,
+          expiry: new Date(data.expiry).getTime(),
+          email: data.email || 'auto@tradeprompt.local'
+        });
+      }
+    }
+  } catch { /* backend not running yet — trial mode still works */ }
+
+  if (details.reason === 'update') {
+    chrome.storage.local.set({ tp_needsReload: false });
   }
 
   chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false });

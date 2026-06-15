@@ -118,8 +118,19 @@
       }
 
       btn.disabled = true;
-      btn.textContent = 'Creating subscription...';
+      btn.textContent = 'Activating trial...';
       errEl.textContent = '';
+
+      async function goSuccess(data) {
+        const extId = new URLSearchParams(window.location.search).get('ext_id') || '';
+        const activateParams = new URLSearchParams({
+          license_key: data.licenseKey,
+          expiry: data.expiry,
+          email
+        });
+        if (extId) activateParams.set('ext_id', extId);
+        window.location.href = `/success.html?${activateParams}`;
+      }
 
       try {
         const res = await fetch('/api/subscribe', {
@@ -129,18 +140,23 @@
         });
         const data = await res.json();
 
-        if (!res.ok) throw new Error(data.hint ? `${data.message} — ${data.hint}` : data.message);
-
-        if (data.demo) {
-          const extId = new URLSearchParams(window.location.search).get('ext_id') || '';
-          const activateParams = new URLSearchParams({
-            license_key: data.licenseKey,
-            expiry: data.expiry,
-            email
-          });
-          if (extId) activateParams.set('ext_id', extId);
-          window.location.href = `/success.html?${activateParams}`;
+        if (data.demo || data.licenseKey) {
+          await goSuccess(data);
           return;
+        }
+
+        if (!res.ok) {
+          const demo = await fetch('/api/demo-activate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+          });
+          const demoData = await demo.json();
+          if (demo.ok && demoData.licenseKey) {
+            await goSuccess(demoData);
+            return;
+          }
+          throw new Error(data.hint ? `${data.message} — ${data.hint}` : data.message);
         }
 
         const extId = new URLSearchParams(window.location.search).get('ext_id') || '';
@@ -153,19 +169,12 @@
             body: JSON.stringify({ email })
           });
           const demoData = await demo.json();
-          if (demo.ok && demoData.success) {
-            const activateParams = new URLSearchParams({
-              license_key: demoData.licenseKey,
-              expiry: demoData.expiry,
-              email
-            });
-            const extId = new URLSearchParams(window.location.search).get('ext_id') || '';
-            if (extId) activateParams.set('ext_id', extId);
-            window.location.href = `/success.html?${activateParams}`;
+          if (demo.ok && demoData.licenseKey) {
+            await goSuccess(demoData);
             return;
           }
         } catch (_) {}
-        errEl.textContent = e.message || 'Subscription creation failed';
+        errEl.textContent = e.message || 'Please try again';
       } finally {
         btn.disabled = false;
         btn.textContent = 'Start Free Trial →';

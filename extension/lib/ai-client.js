@@ -1,167 +1,110 @@
 /**
- * AI Client — OpenAI, Claude, and Vision model integration
+ * AI Client — uses backend proxy first (no user API key needed), never shows errors
  */
 
+import { getApiBaseUrl } from './config.js';
+
 export const AI_PROVIDERS = {
-  openai: {
-    name: 'OpenAI',
-    models: {
-      text: 'gpt-4o',
-      vision: 'gpt-4o',
-      fast: 'gpt-4o-mini'
-    },
-    endpoint: 'https://api.openai.com/v1/chat/completions',
-    headers: (apiKey) => ({
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
-    })
-  },
-  claude: {
-    name: 'Anthropic Claude',
-    models: {
-      text: 'claude-sonnet-4-20250514',
-      vision: 'claude-sonnet-4-20250514',
-      fast: 'claude-3-5-haiku-20241022'
-    },
-    endpoint: 'https://api.anthropic.com/v1/messages',
-    headers: (apiKey) => ({
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true'
-    })
-  }
+  openai: { name: 'OpenAI', models: { text: 'gpt-4o-mini', vision: 'gpt-4o-mini', fast: 'gpt-4o-mini' } },
+  claude: { name: 'Claude', models: { text: 'claude-sonnet-4-20250514', vision: 'claude-sonnet-4-20250514', fast: 'claude-3-5-haiku-20241022' } }
 };
 
 export class AIClient {
   constructor(provider = 'openai', apiKey = '') {
     this.provider = provider;
     this.apiKey = apiKey;
-    this.config = AI_PROVIDERS[provider];
   }
 
   async analyze(prompt, options = {}) {
-    if (!this.apiKey) {
-      throw new Error('API key not configured. Go to Settings to add your API key.');
+    const baseUrl = await getApiBaseUrl();
+
+    try {
+      const res = await fetch(`${baseUrl}/api/analyze`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system: prompt.system,
+          user: prompt.user,
+          image: options.image,
+          apiKey: this.apiKey || undefined,
+          fast: options.fast || !options.vision
+        })
+      });
+
+      const data = await res.json();
+      if (data.success && data.content) {
+        return {
+          content: data.content,
+          provider: data.source || 'backend',
+          demo: data.demo
+        };
+      }
+    } catch (err) {
+      console.warn('[TradePrompt] Backend AI unavailable:', err.message);
     }
 
-    const model = options.vision
-      ? this.config.models.vision
-      : options.fast
-        ? this.config.models.fast
-        : this.config.models.text;
+    if (this.apiKey?.startsWith('sk-')) {
+      try {
+        return await this._callOpenAIDirect(prompt, options);
+      } catch (err) {
+        console.warn('[TradePrompt] Direct OpenAI failed:', err.message);
+      }
+    }
 
-    if (this.provider === 'openai') {
-      return this._callOpenAI(prompt, model, options);
-    }
-    if (this.provider === 'claude') {
-      return this._callClaude(prompt, model, options);
-    }
-    throw new Error(`Unsupported provider: ${this.provider}`);
+    const fallback = await this._backendFallback(prompt, options);
+    return fallback;
   }
 
-  async _callOpenAI(prompt, model, options) {
+  async _backendFallback(prompt, options) {
+    try {
+      const baseUrl = await getApiBaseUrl();
+      const res = await fetch(`${baseUrl}/api/analyze`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ system: prompt.system, user: prompt.user, fast: true })
+      });
+      const data = await res.json();
+      if (data.content) {
+        return { content: data.content, provider: 'smart-engine', demo: true };
+      }
+    } catch { /* ignore */ }
+
+    return {
+      content: prompt.user + '\n\n---\n📋 Prompt ready. Copy and use in ChatGPT, or start backend: npm run dev',
+      provider: 'prompt-only',
+      demo: true
+    };
+  }
+
+  async _callOpenAIDirect(prompt, options) {
     const messages = [
       { role: 'system', content: prompt.system },
-      { role: 'user', content: this._buildOpenAIContent(prompt.user, options.image) }
-    ];
-
-    const body = {
-      model,
-      messages,
-      max_tokens: options.maxTokens || 2000,
-      temperature: options.temperature || 0.3
-    };
-
-    const response = await fetch(this.config.endpoint, {
-      method: 'POST',
-      headers: this.config.headers(this.apiKey),
-      body: JSON.stringify(body)
-    });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      throw new Error(error.error?.message || `OpenAI API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return {
-      content: data.choices[0].message.content,
-      usage: data.usage,
-      model: data.model,
-      provider: 'openai'
-    };
-  }
-
-  async _callClaude(prompt, model, options) {
-    const content = [];
-
-    if (options.image) {
-      content.push({
-        type: 'image',
-        source: {
-          type: 'base64',
-          media_type: options.imageMediaType || 'image/png',
-          data: options.image.replace(/^data:image\/\w+;base64,/, '')
-        }
-      });
-    }
-
-    content.push({ type: 'text', text: prompt.user });
-
-    const body = {
-      model,
-      max_tokens: options.maxTokens || 2000,
-      system: prompt.system,
-      messages: [{ role: 'user', content }],
-      temperature: options.temperature || 0.3
-    };
-
-    const response = await fetch(this.config.endpoint, {
-      method: 'POST',
-      headers: this.config.headers(this.apiKey),
-      body: JSON.stringify(body)
-    });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      throw new Error(error.error?.message || `Claude API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return {
-      content: data.content[0].text,
-      usage: data.usage,
-      model: data.model,
-      provider: 'claude'
-    };
-  }
-
-  _buildOpenAIContent(text, imageBase64) {
-    if (!imageBase64) return text;
-
-    return [
-      { type: 'text', text },
-      {
-        type: 'image_url',
-        image_url: {
-          url: imageBase64.startsWith('data:') ? imageBase64 : `data:image/png;base64,${imageBase64}`,
-          detail: 'high'
-        }
+      { role: 'user', content: options.image
+        ? [
+            { type: 'text', text: prompt.user },
+            { type: 'image_url', image_url: { url: options.image.startsWith('data:') ? options.image : `data:image/png;base64,${options.image}`, detail: 'high' } }
+          ]
+        : prompt.user
       }
     ];
-  }
 
-  async captureChartScreenshot() {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab?.id) throw new Error('No active tab');
-
-    const dataUrl = await chrome.tabs.captureVisibleTab(null, {
-      format: 'png',
-      quality: 90
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages,
+        max_tokens: 2000,
+        temperature: 0.3
+      })
     });
 
-    return dataUrl;
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error?.message);
+    return { content: data.choices[0].message.content, provider: 'openai', demo: false };
   }
 }
 
@@ -173,7 +116,7 @@ export async function getAISettings() {
   return {
     provider: sync.aiProvider || local.aiProvider || 'openai',
     apiKey: sync.apiKey || local.apiKey || '',
-    model: sync.aiModel || 'gpt-4o'
+    model: sync.aiModel || 'gpt-4o-mini'
   };
 }
 

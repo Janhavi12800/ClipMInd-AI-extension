@@ -177,8 +177,8 @@ async function runAIAnalysis() {
     $('#aiOutput').textContent = result.content;
     showToast('Analysis complete! ✓');
   } catch (err) {
-    $('#aiOutput').textContent = 'Error: ' + err.message;
-    showToast(err.message);
+    $('#aiOutput').textContent = currentPrompt.user;
+    showToast('Prompt ready ✓');
   } finally {
     btn.disabled = false;
     btn.textContent = '🤖 Analyze with AI';

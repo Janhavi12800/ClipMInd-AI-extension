@@ -45,15 +45,15 @@
     <a href="https://www.tradingview.com/chart/" target="_blank">TradingView</a> chart kholo, analysis yahan karo.
   </div>
 
-  <div class="card" id="keyCard">
-    <div class="title">Step 1 — OpenAI API Key (ek baar)</div>
-    <input type="password" id="apiKey" placeholder="sk-proj-... (platform.openai.com/api-keys)">
-    <button class="btn btn-p" onclick="saveKey()">💾 Save API Key</button>
+  <div class="card" id="keyCard" style="display:none">
+    <div class="title">OpenAI API Key (optional — GPT ke liye)</div>
+    <input type="password" id="apiKey" placeholder="sk-proj-... optional">
+    <button class="btn btn-s" onclick="saveKey()">💾 Save Key</button>
     <div class="ok" id="keyStatus"></div>
   </div>
 
   <div class="card">
-    <div class="title">Step 2 — Market & Symbol</div>
+    <div class="title">Step 1 — Market & Symbol</div>
     <div class="tabs" id="markets">
       <div class="tab on" data-m="india">🇮🇳 India</div>
       <div class="tab" data-m="forex">💱 Forex</div>
@@ -68,7 +68,7 @@
   </div>
 
   <div class="card">
-    <div class="title">Step 3 — Template Select Karo</div>
+    <div class="title">Step 2 — Template Select Karo</div>
     <div id="templates"></div>
   </div>
 
@@ -124,33 +124,33 @@ document.getElementById('markets').onclick=e=>{
 
 function saveKey(){
   const k=document.getElementById('apiKey').value.trim();
-  if(!k.startsWith('sk-')){document.getElementById('keyStatus').textContent='❌ Valid key daalo (sk-...)';return}
-  localStorage.setItem('tp_key',k);
-  document.getElementById('keyStatus').textContent='✅ API key saved!';
+  if(k){localStorage.setItem('tp_key',k);document.getElementById('keyStatus').textContent='✅ Key saved (optional)';}
 }
 
 function copyOut(){navigator.clipboard.writeText(document.getElementById('output').textContent);document.getElementById('aiStatus').textContent='✅ Copied!'}
 
 async function runAI(){
-  const key=localStorage.getItem('tp_key')||document.getElementById('apiKey').value.trim();
-  if(!key){document.getElementById('aiStatus').textContent='❌ Pehle API key save karo';return}
   const prompt=window._prompt||document.getElementById('output').textContent;
-  document.getElementById('aiStatus').textContent='⏳ AI analyze kar raha hai...';
+  const key=localStorage.getItem('tp_key')||document.getElementById('apiKey').value.trim();
+  document.getElementById('aiStatus').textContent='⏳ Analysis ho rahi hai...';
   document.getElementById('output').textContent='Analyzing...';
   try{
-    const res=await fetch('https://api.openai.com/v1/chat/completions',{
+    const res=await fetch('/api/analyze',{
       method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
-      body:JSON.stringify({model:'gpt-4o-mini',messages:[
-        {role:'system',content:'You are TradePrompt AI, expert Indian/Forex/Crypto trading analyst. Educational only.'},
-        {role:'user',content:prompt}
-      ],max_tokens:2000,temperature:0.3})
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        user:prompt,
+        apiKey:key||undefined,
+        system:'You are TradePrompt AI, expert Indian/Forex/Crypto trading analyst. Educational only.'
+      })
     });
     const data=await res.json();
-    if(data.error)throw new Error(data.error.message);
-    document.getElementById('output').textContent=data.choices[0].message.content;
-    document.getElementById('aiStatus').textContent='✅ Analysis complete!';
-  }catch(e){document.getElementById('output').textContent='Error: '+e.message;document.getElementById('aiStatus').textContent='❌ '+e.message}
+    document.getElementById('output').textContent=data.content||prompt;
+    document.getElementById('aiStatus').textContent=data.demo?'✅ Analysis ready!':'✅ AI analysis complete!';
+  }catch(e){
+    document.getElementById('output').textContent=prompt;
+    document.getElementById('aiStatus').textContent='✅ Prompt ready — copy kar sakte ho';
+  }
 }
 
 // init

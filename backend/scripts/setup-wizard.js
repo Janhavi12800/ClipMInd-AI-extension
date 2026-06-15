@@ -87,6 +87,9 @@ ADMIN_SECRET=${config.adminSecret}
 
 # Your deployed backend URL (update after deploy)
 API_BASE_URL=${config.apiBaseUrl}
+
+# OpenAI (optional — smart analysis works without this)
+OPENAI_API_KEY=${config.openaiApiKey || ''}
 `;
   fs.writeFileSync(ENV_PATH, content);
   console.log(`\n   ✓ Saved: ${ENV_PATH}`);
@@ -219,6 +222,7 @@ async function main() {
   writeEnvFile({
     nodeEnv: apiBaseUrl.includes('localhost') ? 'development' : 'production',
     demoMode: isDemo || razorpayKeyId.includes('DEMO'),
+    openaiApiKey: process.env.OPENAI_API_KEY || '',
     razorpayKeyId: razorpayKeyId || 'rzp_test_YOUR_KEY_ID',
     razorpayKeySecret: razorpayKeySecret || 'YOUR_KEY_SECRET',
     razorpayPlanId: razorpayPlanId || 'plan_YOUR_PLAN_ID',
