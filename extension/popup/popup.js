@@ -20,6 +20,8 @@ async function init() {
 
   if (!settings.apiKey) {
     $('#apiKeyBanner').classList.remove('tp-hidden');
+  } else {
+    $('#inputApiKey').value = settings.apiKey;
   }
 
   await updateLicenseUI();
@@ -203,8 +205,19 @@ function setupEventListeners() {
     chrome.tabs.create({ url: chrome.runtime.getURL('options/options.html#subscription') });
   });
 
-  $('#btnSetupApi').addEventListener('click', () => {
+  $('#btnSetupApi')?.addEventListener('click', () => {
     chrome.tabs.create({ url: chrome.runtime.getURL('options/options.html#ai') });
+  });
+
+  $('#btnSaveApiKey')?.addEventListener('click', async () => {
+    const key = $('#inputApiKey').value.trim();
+    if (!key.startsWith('sk-')) {
+      showToast('Valid sk-... key daalo');
+      return;
+    }
+    await sendMessage('SAVE_SETTINGS', { settings: { apiKey: key, aiProvider: 'openai' } });
+    $('#apiKeyBanner').classList.add('tp-hidden');
+    showToast('API key saved! ✓');
   });
 }
 

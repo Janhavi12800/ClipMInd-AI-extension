@@ -207,10 +207,16 @@ VOLATILITY ANALYSIS FRAMEWORK:
 
 CURRENT DATA:
 - Symbol: ${marketData.symbol || 'N/A'}
-- ATR: ${marketData.atr || 'Calculate from chart'}
-- IV Percentile: ${marketData.ivPercentile || 'N/A'}
-- Recent range: ${marketData.recentRange || 'N/A'}
-- Market: ${this.settings.market}
+- Timeframe: ${marketData.timeframe || '15m'}
+- Spot: ${marketData.spotPrice || 'See chart'}
+- ATR: ${marketData.atr || 'Estimate from visible chart candles'}
+- IV / Fear: ${marketData.ivPercentile || 'Check India VIX for index trades'}
+- Recent range (20 bars): ${marketData.recentRange || marketData.priceRange || 'Read from chart high/low'}
+- Change: ${marketData.change || marketData.change24h || 'N/A'}
+- Chart indicators: ${marketData.indicators || 'Use visible chart indicators'}
+- Market: ${marketData.market || this.settings.market}
+
+Use the data above plus any visible chart context. If a field says N/A, infer from standard technical analysis for ${marketData.symbol || 'this symbol'}.
 
 Provide actionable volatility-based strategy (straddle, breakout, fade, or wait).`,
       metadata: {

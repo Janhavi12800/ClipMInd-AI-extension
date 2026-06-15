@@ -46,6 +46,10 @@
         }
       });
 
+      const indicatorValues = extractIndicatorValues();
+      if (indicatorValues.atr) context.atr = indicatorValues.atr;
+      if (indicatorValues.rsi) context.rsi = indicatorValues.rsi;
+
       const priceEls = document.querySelectorAll('[class*="price"], [data-name="legend-source-value"]');
       const prices = [];
       priceEls.forEach(el => {
@@ -63,6 +67,18 @@
     }
 
     return context;
+  }
+
+  function extractIndicatorValues() {
+    const values = {};
+    document.querySelectorAll('[data-name="legend-source-item"], [class*="legend"]').forEach(item => {
+      const text = (item.textContent || '').replace(/\s+/g, ' ');
+      const atr = text.match(/ATR[^0-9]*([\d,.]+)/i);
+      const rsi = text.match(/RSI[^0-9]*([\d,.]+)/i);
+      if (atr) values.atr = atr[1].replace(/,/g, '');
+      if (rsi) values.rsi = rsi[1].replace(/,/g, '');
+    });
+    return values;
   }
 
   function extractSymbolFromUrl() {

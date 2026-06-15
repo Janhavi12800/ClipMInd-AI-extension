@@ -93,10 +93,19 @@ async function handleMessage(message, sender) {
       });
       return results[0]?.result || null;
 
-    case 'GET_SETTINGS':
-      return await chrome.storage.sync.get([
-        'aiProvider', 'apiKey', 'tp_market', 'tp_riskPercent', 'tp_capital', 'tp_minRR', 'apiBaseUrl'
+    case 'GET_SETTINGS': {
+      const [sync, local] = await Promise.all([
+        chrome.storage.sync.get([
+          'aiProvider', 'apiKey', 'tp_market', 'tp_riskPercent', 'tp_capital', 'tp_minRR', 'apiBaseUrl'
+        ]),
+        chrome.storage.local.get(['apiKey', 'aiProvider'])
       ]);
+      return {
+        ...sync,
+        apiKey: sync.apiKey || local.apiKey || '',
+        aiProvider: sync.aiProvider || local.aiProvider || 'openai'
+      };
+    }
 
     case 'SAVE_SETTINGS':
       await chrome.storage.sync.set(message.settings);

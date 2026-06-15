@@ -1,5 +1,6 @@
 import { PromptEngine, buildMultiIndicatorPrompt } from '../lib/prompt-engine.js';
 import { createAIClient } from '../lib/ai-client.js';
+import { fetchVolatilityMetrics } from '../lib/market-data.js';
 
 let currentMarket = 'india';
 let lastPrompt = null;
@@ -21,6 +22,7 @@ async function init() {
 
   await updateLicenseUI();
   await refreshChartContext();
+  await loadApiKey();
   setupMarketTabs();
   renderTemplates();
   setupEventListeners();
@@ -109,6 +111,59 @@ function renderTemplates() {
   });
 }
 
+async function loadApiKey() {
+  const settings = await sendMessage('GET_SETTINGS');
+  if (settings.apiKey) {
+    $('#inputApiKey').value = settings.apiKey;
+    $('#apiKeyStatus').textContent = '✓ API key saved';
+  } else {
+    $('#apiKeyStatus').textContent = '⚠ API key add karo — AI analysis ke liye zaroori';
+    $('#apiKeyStatus').style.color = 'var(--tp-warning)';
+  }
+}
+
+async function saveApiKey() {
+  const key = $('#inputApiKey').value.trim();
+  if (!key.startsWith('sk-')) {
+    $('#apiKeyStatus').textContent = '❌ Valid OpenAI key daalo (sk-...)';
+    $('#apiKeyStatus').style.color = 'var(--tp-danger)';
+    return;
+  }
+  await sendMessage('SAVE_SETTINGS', {
+    settings: { apiKey: key, aiProvider: 'openai' }
+  });
+  $('#apiKeyStatus').textContent = '✓ API key saved!';
+  $('#apiKeyStatus').style.color = 'var(--tp-success)';
+  showToast('API key saved ✓');
+}
+
+async function getChartContextSafe() {
+  try {
+    return await sendMessage('GET_CHART_CONTEXT') || {};
+  } catch {
+    return {};
+  }
+}
+
+async function buildVolatilityData() {
+  const vars = getVariables();
+  const chartContext = await getChartContextSafe();
+  const metrics = await fetchVolatilityMetrics(currentMarket, vars.symbol, vars.timeframe);
+
+  return {
+    symbol: vars.symbol,
+    timeframe: vars.timeframe,
+    market: currentMarket,
+    atr: chartContext.atr ? `${chartContext.atr} (chart)` : metrics?.atr,
+    recentRange: chartContext.priceRange || metrics?.recentRange,
+    ivPercentile: metrics?.ivPercentile,
+    spotPrice: metrics?.spotPrice,
+    change: metrics?.change,
+    priceRange: chartContext.priceRange,
+    indicators: chartContext.indicators?.slice(0, 5).join(', ')
+  };
+}
+
 function getVariables() {
   return {
     symbol: $('#inputSymbol').value || 'NIFTY',
@@ -152,9 +207,10 @@ async function runVision() {
 }
 
 async function runVolatility() {
-  setLoading('Analyzing volatility...');
+  setLoading('Fetching volatility data...');
   try {
-    lastPrompt = engine.buildVolatilityPrompt(getVariables());
+    const marketData = await buildVolatilityData();
+    lastPrompt = engine.buildVolatilityPrompt(marketData);
     await runAI(lastPrompt);
     await sendMessage('INCREMENT_USAGE');
   } catch (err) {
@@ -179,6 +235,19 @@ async function runMultiIndicator() {
 }
 
 async function runAI(prompt, options = {}) {
+  const settings = await sendMessage('GET_SETTINGS');
+  if (!settings.apiKey) {
+    setOutput(
+      '⚠️ API key add karo (upar wala box) — phir dubara button dabao.\n\n' +
+      'Key yahan se lo: https://platform.openai.com/api-keys\n\n' +
+      '--- Generated Prompt (copy kar sakte ho) ---\n\n' +
+      prompt.user
+    );
+    $('#apiKeySection').scrollIntoView({ behavior: 'smooth' });
+    return;
+  }
+
+  setLoading('AI analyze kar raha hai...');
   try {
     const ai = await createAIClient();
     const result = await ai.analyze(prompt, options);
@@ -201,6 +270,7 @@ function setOutput(text) {
 }
 
 function setupEventListeners() {
+  $('#btnSaveApiKey').addEventListener('click', saveApiKey);
   $('#btnRefreshContext').addEventListener('click', refreshChartContext);
   $('#btnQuickTA').addEventListener('click', runQuickTA);
   $('#btnVision').addEventListener('click', runVision);

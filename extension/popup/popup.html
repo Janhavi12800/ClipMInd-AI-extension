@@ -23,8 +23,9 @@
   <div class="tp-section tp-hidden" id="apiKeyBanner" style="padding-top:10px;padding-bottom:0">
     <div class="tp-card" style="border-color:var(--tp-warning);background:rgba(245,158,11,0.08);padding:10px 12px">
       <div style="font-size:13px;font-weight:600;color:var(--tp-warning)">⚠ API Key Required</div>
-      <div style="font-size:12px;color:var(--tp-text-muted);margin-top:4px">Add OpenAI or Claude key to run AI analysis</div>
-      <button class="tp-btn tp-btn-secondary tp-btn-sm" id="btnSetupApi" style="margin-top:8px">Add API Key →</button>
+      <input class="tp-input" type="password" id="inputApiKey" placeholder="sk-proj-... paste here" style="margin-top:8px">
+      <button class="tp-btn tp-btn-primary tp-btn-sm" id="btnSaveApiKey" style="margin-top:8px">💾 Save & Use AI</button>
+      <div style="font-size:11px;color:var(--tp-text-muted);margin-top:6px">Get key: platform.openai.com/api-keys</div>
     </div>
   </div>
 

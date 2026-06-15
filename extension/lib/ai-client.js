@@ -166,11 +166,14 @@ export class AIClient {
 }
 
 export async function getAISettings() {
-  const result = await chrome.storage.sync.get(['aiProvider', 'apiKey', 'aiModel']);
+  const [sync, local] = await Promise.all([
+    chrome.storage.sync.get(['aiProvider', 'apiKey', 'aiModel']),
+    chrome.storage.local.get(['apiKey', 'aiProvider'])
+  ]);
   return {
-    provider: result.aiProvider || 'openai',
-    apiKey: result.apiKey || '',
-    model: result.aiModel || 'gpt-4o'
+    provider: sync.aiProvider || local.aiProvider || 'openai',
+    apiKey: sync.apiKey || local.apiKey || '',
+    model: sync.aiModel || 'gpt-4o'
   };
 }
 

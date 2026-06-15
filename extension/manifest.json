@@ -20,6 +20,8 @@
     "https://api.openai.com/*",
     "https://api.anthropic.com/*",
     "https://api.tradeprompt.ai/*",
+    "https://query1.finance.yahoo.com/*",
+    "https://query2.finance.yahoo.com/*",
     "http://localhost:3001/*"
   ],
   "externally_connectable": {
