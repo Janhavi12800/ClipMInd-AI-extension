@@ -1,0 +1,8 @@
+export { DashboardPage } from './DashboardPage'
+export { PromptGeneratorPage } from './PromptGeneratorPage'
+export { ContentGeneratorPage } from './ContentGeneratorPage'
+export { SeoAnalyzerPage } from './SeoAnalyzerPage'
+export { SecurityScannerPage } from './SecurityScannerPage'
+export { NotesManagerPage } from './NotesManagerPage'
+export { SettingsPage } from './SettingsPage'
+export { ProfilePage } from './ProfilePage'
