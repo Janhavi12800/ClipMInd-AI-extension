@@ -52,6 +52,24 @@ const PLAN = {
   trialDays: TRIAL_DAYS
 };
 
+function isLocalhost(req) {
+  const host = (req.headers.host || '').split(':')[0];
+  return host === 'localhost' || host === '127.0.0.1' || API_BASE_URL.includes('localhost');
+}
+
+function activateDemoLicense(email, res) {
+  const { licenseKey, expiry } = createLicense(email, { demo: true });
+  return res.json({
+    success: true,
+    licenseKey,
+    expiry: expiry.toISOString(),
+    email,
+    demo: true,
+    message: 'Demo mode: License activated instantly',
+    activateUrl: `${API_BASE_URL}/success.html?license_key=${licenseKey}&expiry=${expiry.toISOString()}&email=${encodeURIComponent(email)}`
+  });
+}
+
 function createLicense(email, extra = {}) {
   const licenseKey = `tp_${uuidv4().replace(/-/g, '').slice(0, 20)}`;
   const expiry = new Date();
@@ -101,6 +119,17 @@ app.get('/api/plans', (req, res) => {
   });
 });
 
+app.post('/api/demo-activate', (req, res) => {
+  const email = req.body?.email;
+  if (!email || !email.includes('@')) {
+    return res.status(400).json({ message: 'Valid email is required' });
+  }
+  if (!isLocalhost(req) && !isDemoMode()) {
+    return res.status(403).json({ message: 'Demo activation only available locally' });
+  }
+  return activateDemoLicense(email, res);
+});
+
 app.post('/api/subscribe', async (req, res) => {
   try {
     const { email, plan = 'monthly' } = req.body;
@@ -108,17 +137,8 @@ app.post('/api/subscribe', async (req, res) => {
       return res.status(400).json({ message: 'Valid email is required' });
     }
 
-    if (!razorpay) {
-      const { licenseKey, expiry } = createLicense(email, { demo: true });
-      return res.json({
-        success: true,
-        licenseKey,
-        expiry: expiry.toISOString(),
-        email,
-        demo: true,
-        message: 'Demo mode: License activated instantly',
-        activateUrl: `${API_BASE_URL}/success.html?license_key=${licenseKey}&expiry=${expiry.toISOString()}&email=${encodeURIComponent(email)}`
-      });
+    if (!razorpay || isDemoMode() || isLocalhost(req)) {
+      return activateDemoLicense(email, res);
     }
 
     const trialEnd = new Date();
@@ -151,19 +171,10 @@ app.post('/api/subscribe', async (req, res) => {
   } catch (error) {
     console.error('Subscribe error:', error);
 
-    if (process.env.NODE_ENV !== 'production') {
+    if (isLocalhost(req) || isDemoMode() || process.env.NODE_ENV !== 'production') {
       const email = req.body?.email;
       if (email && email.includes('@')) {
-        const { licenseKey, expiry } = createLicense(email, { demo: true });
-        return res.json({
-          success: true,
-          licenseKey,
-          expiry: expiry.toISOString(),
-          email,
-          demo: true,
-          message: 'Demo mode: Razorpay not configured — license activated for testing',
-          activateUrl: `${API_BASE_URL}/success.html?license_key=${licenseKey}&expiry=${expiry.toISOString()}&email=${encodeURIComponent(email)}`
-        });
+        return activateDemoLicense(email, res);
       }
     }
 

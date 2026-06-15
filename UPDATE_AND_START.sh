@@ -23,6 +23,8 @@ echo "📥 Latest files download ho rahe hain..."
 mkdir -p backend/public extension/onboarding
 curl -fsSL "$BASE/backend/public/app.html" -o backend/public/app.html
 curl -fsSL "$BASE/backend/public/checkout.html" -o backend/public/checkout.html
+curl -fsSL "$BASE/FIX_CHECKOUT.sh" -o FIX_CHECKOUT.sh 2>/dev/null
+chmod +x FIX_CHECKOUT.sh 2>/dev/null
 curl -fsSL "$BASE/backend/src/server.js" -o backend/src/server.js
 curl -fsSL "$BASE/FIX_NOW.sh" -o FIX_NOW.sh 2>/dev/null
 chmod +x FIX_NOW.sh 2>/dev/null

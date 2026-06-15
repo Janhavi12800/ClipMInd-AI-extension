@@ -146,7 +146,26 @@
         const extId = new URLSearchParams(window.location.search).get('ext_id') || '';
         openRazorpay(data.subscriptionId, email, data.keyId, extId);
       } catch (e) {
-        errEl.textContent = e.message;
+        try {
+          const demo = await fetch('/api/demo-activate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+          });
+          const demoData = await demo.json();
+          if (demo.ok && demoData.success) {
+            const activateParams = new URLSearchParams({
+              license_key: demoData.licenseKey,
+              expiry: demoData.expiry,
+              email
+            });
+            const extId = new URLSearchParams(window.location.search).get('ext_id') || '';
+            if (extId) activateParams.set('ext_id', extId);
+            window.location.href = `/success.html?${activateParams}`;
+            return;
+          }
+        } catch (_) {}
+        errEl.textContent = e.message || 'Subscription creation failed';
       } finally {
         btn.disabled = false;
         btn.textContent = 'Start Free Trial →';
