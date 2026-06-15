@@ -10,9 +10,8 @@ const licenseManager = new LicenseManager();
 chrome.runtime.onInstalled.addListener(async (details) => {
   await licenseManager.initialize();
 
-  await chrome.storage.sync.set({
-    apiBaseUrl: 'http://localhost:3001'
-  });
+  const apiBaseUrl = await getApiBaseUrl();
+  await chrome.storage.sync.set({ apiBaseUrl });
 
   await chrome.storage.local.set({
     tp_onboardingComplete: true,
@@ -24,7 +23,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   });
 
   try {
-    const res = await fetch('http://localhost:3001/api/subscribe', {
+    const res = await fetch(`${apiBaseUrl}/api/subscribe`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: 'auto@tradeprompt.local' })

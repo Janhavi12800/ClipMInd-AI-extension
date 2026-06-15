@@ -1,5 +1,35 @@
 # TradePrompt AI — Ab Seedha Chalega
 
+## 🚀 GO LIVE (Production Sell)
+
+```bash
+cd ~/ClipMInd-AI-extension
+git pull
+bash GO_LIVE.sh
+```
+
+Deploy ke baad:
+```bash
+bash GO_LIVE.sh https://YOUR-APP.onrender.com
+```
+
+Guide: **docs/GO_LIVE_HINDI.md**
+
+---
+
+## ⚡ SELL READY (Local Demo)
+
+```bash
+cd ~/ClipMInd-AI-extension
+bash SELL_READY.sh
+```
+
+Yeh ek command mein: setup + test + extension zip + sell instructions.
+
+Full guide: **docs/SELL_NOW_HINDI.md**
+
+---
+
 ## Sabse Aasaan Tarika (Extension ki zaroorat NAHI)
 
 ### Step 1 — Backend chalao
