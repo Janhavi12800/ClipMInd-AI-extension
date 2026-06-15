@@ -6,12 +6,14 @@ async function sendMessage(type, data = {}) {
 
 async function loadSettings() {
   const settings = await sendMessage('GET_SETTINGS');
+  const apiUrl = await sendMessage('GET_API_URL');
   $('#settingMarket').value = settings.tp_market || 'india';
   $('#settingCapital').value = settings.tp_capital || 100000;
   $('#settingProvider').value = settings.aiProvider || 'openai';
   $('#settingApiKey').value = settings.apiKey || '';
   $('#settingRisk').value = settings.tp_riskPercent || 1;
   $('#settingMinRR').value = settings.tp_minRR || 2;
+  $('#settingApiUrl').value = settings.apiBaseUrl || apiUrl?.apiBaseUrl || 'http://localhost:3001';
 }
 
 async function saveSettings() {
@@ -22,7 +24,8 @@ async function saveSettings() {
       aiProvider: $('#settingProvider').value,
       apiKey: $('#settingApiKey').value,
       tp_riskPercent: parseFloat($('#settingRisk').value),
-      tp_minRR: parseFloat($('#settingMinRR').value)
+      tp_minRR: parseFloat($('#settingMinRR').value),
+      apiBaseUrl: $('#settingApiUrl').value.trim() || 'http://localhost:3001'
     }
   });
   showToast('Settings saved! ✓');
@@ -139,6 +142,9 @@ function setupNav() {
 
   if (window.location.hash === '#subscription') {
     document.querySelector('[data-page="subscription"]').click();
+  }
+  if (window.location.hash === '#ai') {
+    document.querySelector('[data-page="ai"]').click();
   }
 }
 

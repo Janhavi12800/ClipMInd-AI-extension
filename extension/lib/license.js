@@ -50,7 +50,12 @@ export const PLAN = {
 
 export class LicenseManager {
   constructor(apiBaseUrl) {
-    this.apiBaseUrl = apiBaseUrl || getApiBaseUrl();
+    this._apiBaseUrl = apiBaseUrl || null;
+  }
+
+  async getApiBaseUrl() {
+    if (this._apiBaseUrl) return this._apiBaseUrl;
+    return await getApiBaseUrl();
   }
 
   async initialize() {
@@ -98,10 +103,11 @@ export class LicenseManager {
       };
     }
 
+    const apiBaseUrl = await this.getApiBaseUrl();
     return {
       status: LICENSE_STATUS.EXPIRED,
       message: 'Trial ended. Subscribe for ₹100/month to continue.',
-      upgradeUrl: `${this.apiBaseUrl}/subscribe`
+      upgradeUrl: `${apiBaseUrl}/subscribe`
     };
   }
 
@@ -174,7 +180,8 @@ export class LicenseManager {
   }
 
   async activateWithKey(licenseKey) {
-    const response = await fetch(`${this.apiBaseUrl}/api/activate-license`, {
+    const apiBaseUrl = await this.getApiBaseUrl();
+    const response = await fetch(`${apiBaseUrl}/api/activate-license`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ licenseKey })
@@ -192,15 +199,17 @@ export class LicenseManager {
     return data;
   }
 
-  getCheckoutUrl(email = '') {
+  async getCheckoutUrl(email = '') {
+    const apiBaseUrl = await this.getApiBaseUrl();
     const extId = chrome.runtime.id;
     const params = new URLSearchParams({ email, ext_id: extId });
-    return `${this.apiBaseUrl}/checkout.html?${params}`;
+    return `${apiBaseUrl}/checkout.html?${params}`;
   }
 
   async startSubscription(email) {
     try {
-      const response = await fetch(`${this.apiBaseUrl}/api/subscribe`, {
+      const apiBaseUrl = await this.getApiBaseUrl();
+      const response = await fetch(`${apiBaseUrl}/api/subscribe`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, plan: 'monthly' })
@@ -221,7 +230,8 @@ export class LicenseManager {
     if (!licenseKey) return null;
 
     try {
-      const response = await fetch(`${this.apiBaseUrl}/api/verify`, {
+      const apiBaseUrl = await this.getApiBaseUrl();
+      const response = await fetch(`${apiBaseUrl}/api/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ licenseKey })

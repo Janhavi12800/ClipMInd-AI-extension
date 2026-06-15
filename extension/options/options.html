@@ -39,11 +39,16 @@
         <option value="crypto">₿ Cryptocurrency</option>
       </select>
     </div>
-    <div class="tp-section">
-      <div class="tp-section-title">Default Capital (₹)</div>
-      <input class="tp-input" type="number" id="settingCapital" value="100000" min="1000">
-    </div>
+  <div class="tp-section">
+    <div class="tp-section-title">Default Capital (₹)</div>
+    <input class="tp-input" type="number" id="settingCapital" value="100000" min="1000">
   </div>
+  <div class="tp-section">
+    <div class="tp-section-title">Backend API URL</div>
+    <input class="tp-input" type="url" id="settingApiUrl" placeholder="http://localhost:3001">
+    <p style="font-size:12px;color:var(--tp-text-muted);margin-top:6px">Change after deploying backend to production</p>
+  </div>
+</div>
 
   <!-- AI Provider -->
   <div class="tp-page" id="page-ai">

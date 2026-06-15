@@ -18,6 +18,10 @@ async function init() {
   engine.settings.riskPercent = settings.tp_riskPercent || 1;
   engine.settings.capital = settings.tp_capital || 100000;
 
+  if (!settings.apiKey) {
+    $('#apiKeyBanner').classList.remove('tp-hidden');
+  }
+
   await updateLicenseUI();
   setupMarketTabs();
   renderTemplates();
@@ -195,7 +199,12 @@ function setupEventListeners() {
   });
 
   $('#btnUpgrade').addEventListener('click', async () => {
+    chrome.runtime.openOptionsPage();
     chrome.tabs.create({ url: chrome.runtime.getURL('options/options.html#subscription') });
+  });
+
+  $('#btnSetupApi').addEventListener('click', () => {
+    chrome.tabs.create({ url: chrome.runtime.getURL('options/options.html#ai') });
   });
 }
 

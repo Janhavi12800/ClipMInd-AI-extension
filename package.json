@@ -1,0 +1,15 @@
+{
+  "name": "tradeprompt-ai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "TradePrompt AI — Smart Trading Prompts for Indian Markets",
+  "scripts": {
+    "setup": "cd backend && npm install && npm run setup:demo",
+    "setup:full": "cd backend && npm install && npm run setup",
+    "dev": "cd backend && npm install && npm run dev",
+    "verify": "cd backend && npm run verify",
+    "build": "bash scripts/build-extension.sh",
+    "assets": "python3 scripts/generate-store-assets.py",
+    "start": "npm run setup && npm run dev"
+  }
+}

@@ -70,10 +70,10 @@ async function handleMessage(message, sender) {
       return await licenseManager.activateWithKey(message.licenseKey);
 
     case 'GET_CHECKOUT_URL':
-      return { url: licenseManager.getCheckoutUrl(message.email || '') };
+      return { url: await licenseManager.getCheckoutUrl(message.email || '') };
 
     case 'GET_API_URL':
-      return { apiBaseUrl: getApiBaseUrl() };
+      return { apiBaseUrl: await getApiBaseUrl() };
 
     case 'OPEN_SIDE_PANEL':
       await chrome.sidePanel.open({ windowId: sender.tab?.windowId });
@@ -96,7 +96,7 @@ async function handleMessage(message, sender) {
 
     case 'GET_SETTINGS':
       return await chrome.storage.sync.get([
-        'aiProvider', 'apiKey', 'tp_market', 'tp_riskPercent', 'tp_capital', 'tp_minRR'
+        'aiProvider', 'apiKey', 'tp_market', 'tp_riskPercent', 'tp_capital', 'tp_minRR', 'apiBaseUrl'
       ]);
 
     case 'SAVE_SETTINGS':

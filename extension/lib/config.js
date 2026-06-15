@@ -2,7 +2,7 @@
  * TradePrompt AI — Environment Configuration
  */
 
-const CONFIG = {
+const DEFAULT_CONFIG = {
   development: {
     apiBaseUrl: 'http://localhost:3001',
     appName: 'TradePrompt AI'
@@ -15,9 +15,13 @@ const CONFIG = {
 
 export function getConfig() {
   const isDev = !('update_url' in chrome.runtime.getManifest());
-  return isDev ? CONFIG.development : CONFIG.production;
+  return isDev ? DEFAULT_CONFIG.development : DEFAULT_CONFIG.production;
 }
 
-export function getApiBaseUrl() {
+export async function getApiBaseUrl() {
+  try {
+    const stored = await chrome.storage.sync.get(['apiBaseUrl']);
+    if (stored.apiBaseUrl) return stored.apiBaseUrl;
+  } catch { /* not in extension context */ }
   return getConfig().apiBaseUrl;
 }

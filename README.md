@@ -1,6 +1,10 @@
 # TradePrompt AI — Smart Trading Prompts Extension
 
+> **Quick start:** `bash scripts/dev.sh` → load `extension/` in Chrome → add API key → open TradingView
+
 Professional AI prompt engineering Chrome extension for **Indian Stock Market (NSE/BSE)**, **Forex**, and **Cryptocurrency** trading.
+
+📖 **[QUICKSTART.md](QUICKSTART.md)** — Get running in 2 minutes
 
 ## Features
 

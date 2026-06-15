@@ -88,8 +88,8 @@
 
   <script>
     document.getElementById('btnSettings').addEventListener('click', () => {
-      chrome.runtime.openOptionsPage();
-      window.close();
+      chrome.tabs.create({ url: chrome.runtime.getURL('options/options.html#ai') });
+      finishOnboarding();
     });
     document.getElementById('btnTradingView').addEventListener('click', () => {
       chrome.tabs.create({ url: 'https://www.tradingview.com/chart/' });
