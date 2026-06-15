@@ -8,6 +8,7 @@
     "setup:full": "cd backend && npm install && npm run setup",
     "dev": "cd backend && npm install && npm run dev",
     "verify": "cd backend && npm run verify",
+    "verify:youtube-prompt": "node scripts/validate-youtube-prompt.mjs",
     "build": "bash scripts/build-extension.sh",
     "assets": "python3 scripts/generate-store-assets.py",
     "start": "npm run setup && npm run dev"
