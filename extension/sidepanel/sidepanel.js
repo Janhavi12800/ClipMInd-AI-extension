@@ -2,6 +2,7 @@ import { PromptEngine, buildMultiIndicatorPrompt } from '../lib/prompt-engine.js
 import { createAIClient } from '../lib/ai-client.js';
 import { fetchVolatilityMetrics } from '../lib/market-data.js';
 import { sendMessage } from '../lib/messaging.js';
+import { getApiBaseUrl } from '../lib/config.js';
 
 let currentMarket = 'india';
 let lastPrompt = null;
@@ -203,6 +204,36 @@ async function runMultiIndicator() {
   await sendMessage('INCREMENT_USAGE');
 }
 
+async function runBuyAdvice() {
+  setLoading('Buy advice la rahe hain...');
+  const vars = getVariables();
+  try {
+    const base = await getApiBaseUrl();
+    const res = await fetch(`${base}/api/advice`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ symbol: vars.symbol, market: currentMarket, timeframe: vars.timeframe })
+    });
+    const data = await res.json();
+    if (data.verdict) showVerdict(data.verdict);
+    lastResult = data.content || '';
+    setOutput(lastResult);
+    showToast(data.verdict?.actionHi || 'Advice ready ✓');
+  } catch {
+    await runTemplate(currentMarket === 'india' ? 'india-buy' : `${currentMarket}-ta`);
+  }
+  await sendMessage('INCREMENT_USAGE');
+}
+
+function showVerdict(v) {
+  const el = $('#verdictBanner');
+  if (!v) { el.style.display = 'none'; return; }
+  const cls = v.action === 'BUY' ? 'buy' : v.action === 'BUY ON DIP' ? 'dip' : v.action === 'AVOID' ? 'avoid' : v.action === 'SELL / EXIT' ? 'sell' : 'hold';
+  el.className = `tp-verdict ${cls}`;
+  el.style.display = 'block';
+  el.innerHTML = `<div class="title">${v.emoji} ${v.actionHi}</div><div class="sub">${v.action} | ${v.confidence}/10</div><div>${v.actionDetail}</div>`;
+}
+
 async function runAI(prompt, options = {}) {
   setLoading('AI analyze kar raha hai...');
   const ai = await createAIClient();
@@ -213,8 +244,9 @@ async function runAI(prompt, options = {}) {
     timeframe: getVariables().timeframe
   });
   lastResult = result.content;
+  if (result.verdict) showVerdict(result.verdict);
   setOutput(result.content);
-  showToast('Analysis ready ✓');
+  showToast(result.verdict?.actionHi || 'Analysis ready ✓');
 }
 
 function setLoading(msg) {
@@ -230,6 +262,7 @@ function setOutput(text) {
 function setupEventListeners() {
   $('#btnSaveApiKey').addEventListener('click', saveApiKey);
   $('#btnRefreshContext').addEventListener('click', refreshChartContext);
+  $('#btnBuyAdvice').addEventListener('click', runBuyAdvice);
   $('#btnQuickTA').addEventListener('click', runQuickTA);
   $('#btnVision').addEventListener('click', runVision);
   $('#btnVolatility').addEventListener('click', runVolatility);

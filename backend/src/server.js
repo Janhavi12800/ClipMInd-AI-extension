@@ -8,8 +8,11 @@ import { v4 as uuidv4 } from 'uuid';
 import Razorpay from 'razorpay';
 import { LicenseStore } from './storage.js';
 import { createAdminRoutes } from './admin.js';
-import { runAnalysis } from './ai-service.js';
-import { generateSmartAnalysis } from './smart-analysis.js';
+import { runAnalysis, buildMarketMeta } from './ai-service.js';
+import { generateSmartAnalysis, getAnalysisVerdict } from './smart-analysis.js';
+import { resolveSymbol, POPULAR_STOCKS } from './symbol-resolver.js';
+import { combineVerdicts } from './advice-engine.js';
+import { fetchMarketData } from './market-data.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -126,11 +129,64 @@ app.get('/api/plans', (req, res) => {
 app.post('/api/market-context', async (req, res) => {
   try {
     const { symbol, market, timeframe } = req.body;
-    const { buildMarketMeta } = await import('./ai-service.js');
-    const meta = await buildMarketMeta({ symbol, market, timeframe });
-    res.json({ success: true, meta });
+    const resolved = resolveSymbol(symbol, market);
+    const meta = await buildMarketMeta({ symbol: resolved, market, timeframe });
+    res.json({ success: true, meta, symbol: resolved });
   } catch (error) {
     res.json({ success: false, meta: {} });
+  }
+});
+
+app.get('/api/popular', (req, res) => {
+  res.json({ success: true, stocks: POPULAR_STOCKS });
+});
+
+app.get('/api/quote', async (req, res) => {
+  try {
+    const market = req.query.market || 'india';
+    const symbol = resolveSymbol(req.query.symbol || 'RELIANCE', market);
+    const quote = await fetchMarketData(market, symbol);
+    res.json({ success: true, symbol, quote });
+  } catch {
+    res.json({ success: false, symbol: req.query.symbol, quote: null });
+  }
+});
+
+app.post('/api/advice', async (req, res) => {
+  try {
+    const { symbol, market = 'india', timeframe = '1D' } = req.body;
+    const resolved = resolveSymbol(symbol, market);
+    if (!resolved) {
+      return res.status(400).json({ success: false, message: 'Symbol required' });
+    }
+
+    const shortTf = ['1D', '1W'].includes(timeframe) ? '15m' : timeframe;
+    const [metaLong, metaShort] = await Promise.all([
+      buildMarketMeta({ symbol: resolved, market, timeframe }),
+      buildMarketMeta({ symbol: resolved, market, timeframe: shortTf })
+    ]);
+
+    const vLong = getAnalysisVerdict({ user: 'buy advice' }, metaLong);
+    const vShort = getAnalysisVerdict({ user: 'buy advice' }, metaShort);
+    const verdict = combineVerdicts(vLong, vShort);
+
+    const content = generateSmartAnalysis(
+      { user: `Should I buy ${resolved}?` },
+      { ...metaLong, symbol: resolved }
+    );
+
+    res.json({
+      success: true,
+      symbol: resolved,
+      verdict,
+      meta: metaLong,
+      metaShort,
+      content,
+      source: 'advice-engine'
+    });
+  } catch (error) {
+    console.error('Advice error:', error);
+    res.json({ success: true, symbol: req.body?.symbol, verdict: null, content: 'Analysis loading failed — retry.' });
   }
 });
 
@@ -158,15 +214,27 @@ app.post('/api/analyze', async (req, res) => {
       content: result.content,
       source: result.source,
       demo: result.demo,
-      meta: result.meta
+      meta: result.meta,
+      verdict: result.verdict || getAnalysisVerdict({ user: userPrompt }, result.meta || {})
     });
   } catch (error) {
     console.error('Analyze error:', error);
+    const meta = {
+      symbol: req.body?.symbol,
+      market: req.body?.market,
+      timeframe: req.body?.timeframe
+    };
     const content = generateSmartAnalysis(
       { user: req.body?.user || req.body?.prompt || '' },
-      { symbol: req.body?.symbol, market: req.body?.market, timeframe: req.body?.timeframe }
+      meta
     );
-    res.json({ success: true, content, source: 'smart-engine', demo: true });
+    res.json({
+      success: true,
+      content,
+      source: 'smart-engine',
+      demo: true,
+      verdict: getAnalysisVerdict({ user: req.body?.user || req.body?.prompt || '' }, meta)
+    });
   }
 });
 

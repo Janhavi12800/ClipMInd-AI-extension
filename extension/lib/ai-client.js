@@ -30,7 +30,13 @@ export class AIClient {
       });
       const data = await res.json();
       if (data.content) {
-        return { content: data.content, provider: data.source || 'backend', demo: data.demo };
+        return {
+          content: data.content,
+          provider: data.source || 'backend',
+          demo: data.demo,
+          verdict: data.verdict,
+          meta: data.meta
+        };
       }
     } catch { /* backend down */ }
 
