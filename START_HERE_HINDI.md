@@ -1,5 +1,18 @@
 # TradePrompt AI — Ab Seedha Chalega
 
+## ⚡ SELL READY (Sabse Pehle Ye Chalao)
+
+```bash
+cd ~/ClipMInd-AI-extension
+bash SELL_READY.sh
+```
+
+Yeh ek command mein: setup + test + extension zip + sell instructions.
+
+Full guide: **docs/SELL_NOW_HINDI.md**
+
+---
+
 ## Sabse Aasaan Tarika (Extension ki zaroorat NAHI)
 
 ### Step 1 — Backend chalao
