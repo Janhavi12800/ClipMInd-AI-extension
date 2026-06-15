@@ -89,9 +89,15 @@
     <button class="btn" id="payBtn" onclick="startCheckout()">Start Free Trial →</button>
     <div class="error" id="error"></div>
     <p class="note">Payment secured by Razorpay. UPI, Cards, NetBanking accepted.</p>
+    <p class="note" id="demoNote" style="display:none;margin-top:8px;color:#10b981">
+      Demo mode: trial activates instantly without payment.
+    </p>
   </div>
 
   <script>
+    fetch('/api/health').then(r => r.json()).then(d => {
+      if (d.demoMode) document.getElementById('demoNote').style.display = 'block';
+    }).catch(() => {});
     const params = new URLSearchParams(window.location.search);
     const prefillEmail = params.get('email') || '';
     const prefillSubId = params.get('subscription_id') || '';
@@ -123,7 +129,7 @@
         });
         const data = await res.json();
 
-        if (!res.ok) throw new Error(data.message);
+        if (!res.ok) throw new Error(data.hint ? `${data.message} — ${data.hint}` : data.message);
 
         if (data.demo) {
           const extId = new URLSearchParams(window.location.search).get('ext_id') || '';

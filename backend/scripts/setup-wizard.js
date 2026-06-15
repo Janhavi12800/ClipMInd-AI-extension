@@ -68,6 +68,7 @@ function writeEnvFile(config) {
 
 PORT=3001
 NODE_ENV=${config.nodeEnv || 'development'}
+DEMO_MODE=${config.demoMode ? 'true' : 'false'}
 
 # Razorpay
 RAZORPAY_KEY_ID=${config.razorpayKeyId}
@@ -217,6 +218,7 @@ async function main() {
 
   writeEnvFile({
     nodeEnv: apiBaseUrl.includes('localhost') ? 'development' : 'production',
+    demoMode: isDemo || razorpayKeyId.includes('DEMO'),
     razorpayKeyId: razorpayKeyId || 'rzp_test_YOUR_KEY_ID',
     razorpayKeySecret: razorpayKeySecret || 'YOUR_KEY_SECRET',
     razorpayPlanId: razorpayPlanId || 'plan_YOUR_PLAN_ID',

@@ -22,6 +22,8 @@ cd "$DIR"
 echo "📥 Latest files download ho rahe hain..."
 mkdir -p backend/public extension/onboarding
 curl -fsSL "$BASE/backend/public/app.html" -o backend/public/app.html
+curl -fsSL "$BASE/backend/public/checkout.html" -o backend/public/checkout.html
+curl -fsSL "$BASE/backend/src/server.js" -o backend/src/server.js
 curl -fsSL "$BASE/FIX_NOW.sh" -o FIX_NOW.sh 2>/dev/null
 chmod +x FIX_NOW.sh 2>/dev/null
 bash FIX_NOW.sh 2>/dev/null
@@ -43,6 +45,7 @@ sleep 1
 cd backend
 npm install --silent 2>/dev/null
 [ ! -f .env ] && npm run setup:demo
+grep -q '^DEMO_MODE=true' .env 2>/dev/null || sed -i '1a DEMO_MODE=true' .env 2>/dev/null || echo 'DEMO_MODE=true' >> .env
 
 echo ""
 echo "============================================"

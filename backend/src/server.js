@@ -25,7 +25,19 @@ const TRIAL_DAYS = parseInt(process.env.TRIAL_DAYS || '3');
 const SUBSCRIPTION_AMOUNT = parseInt(process.env.SUBSCRIPTION_AMOUNT || '10000');
 const store = new LicenseStore();
 
-const razorpay = process.env.RAZORPAY_KEY_ID && !process.env.RAZORPAY_KEY_ID.includes('YOUR')
+function isDemoMode() {
+  if (process.env.DEMO_MODE === 'true') return true;
+
+  const keyId = process.env.RAZORPAY_KEY_ID || '';
+  const planId = process.env.RAZORPAY_PLAN_ID || '';
+
+  if (!keyId || keyId.includes('YOUR') || keyId.includes('DEMO')) return true;
+  if (!planId || planId.includes('YOUR') || planId.includes('DEMO') || planId.includes('SET_')) return true;
+
+  return false;
+}
+
+const razorpay = !isDemoMode()
   ? new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID,
       key_secret: process.env.RAZORPAY_KEY_SECRET
@@ -63,6 +75,7 @@ app.get('/api/health', (req, res) => {
     version: '1.0.0',
     plan: PLAN,
     razorpay: !!razorpay,
+    demoMode: isDemoMode(),
     apiBaseUrl: API_BASE_URL
   });
 });
@@ -137,7 +150,31 @@ app.post('/api/subscribe', async (req, res) => {
     });
   } catch (error) {
     console.error('Subscribe error:', error);
-    res.status(500).json({ message: error.message || 'Subscription creation failed' });
+
+    if (process.env.NODE_ENV !== 'production') {
+      const email = req.body?.email;
+      if (email && email.includes('@')) {
+        const { licenseKey, expiry } = createLicense(email, { demo: true });
+        return res.json({
+          success: true,
+          licenseKey,
+          expiry: expiry.toISOString(),
+          email,
+          demo: true,
+          message: 'Demo mode: Razorpay not configured — license activated for testing',
+          activateUrl: `${API_BASE_URL}/success.html?license_key=${licenseKey}&expiry=${expiry.toISOString()}&email=${encodeURIComponent(email)}`
+        });
+      }
+    }
+
+    const hint = !process.env.RAZORPAY_PLAN_ID || process.env.RAZORPAY_PLAN_ID.includes('SET_')
+      ? 'Run: cd backend && npm run setup:razorpay'
+      : 'Check Razorpay keys and plan ID in backend/.env';
+
+    res.status(500).json({
+      message: error.message || 'Subscription creation failed',
+      hint
+    });
   }
 });
 
@@ -262,6 +299,6 @@ createAdminRoutes(app, store);
 
 app.listen(PORT, () => {
   console.log(`TradePrompt AI Backend → ${API_BASE_URL}`);
-  console.log(`Razorpay: ${razorpay ? 'Live' : 'Demo mode'}`);
+  console.log(`Razorpay: ${razorpay ? 'Configured' : 'Demo mode (instant free trial)'}`);
   console.log(`Checkout: ${API_BASE_URL}/checkout.html`);
 });
