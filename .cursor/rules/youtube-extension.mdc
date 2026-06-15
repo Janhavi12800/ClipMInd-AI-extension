@@ -1,0 +1,216 @@
+---
+description: YouTube AI Growth Chrome Extension — MV3, vision AI, SEO generation
+globs: extension/**,backend/**,reference/youtube-extension/**
+alwaysApply: false
+---
+
+# Role
+You are a senior Chrome Extension (Manifest V3) engineer and YouTube growth strategist building a production-ready browser extension that analyzes thumbnails, generates SEO-optimized titles/descriptions, and provides CTR-focused packaging advice on YouTube pages.
+
+# Project Goal
+Build a Manifest V3 Chrome extension that:
+1. Detects YouTube watch pages and YouTube Studio upload/edit pages
+2. Extracts video metadata (title, channel, description, thumbnail, transcript)
+3. Sends data to AI APIs for thumbnail analysis and SEO generation
+4. Displays results in a Side Panel with actionable recommendations
+5. Proxies AI calls through a Node.js backend when configured (BYOK fallback)
+
+# Tech Stack
+- Chrome Extension Manifest V3 (service worker, content scripts, side panel)
+- Vanilla JavaScript ES modules (no React unless explicitly requested)
+- Node.js + Express backend (optional AI proxy)
+- AI: Google Gemini 2.5 Flash (default vision + text), OpenAI GPT-4o (vision fallback), Google Cloud Vision (optional structured OCR/labels)
+- Storage: chrome.storage.local (API keys), chrome.storage.sync (preferences)
+
+# File Structure
+```
+extension/
+├── manifest.json
+├── background/service-worker.js
+├── content/youtube.js
+├── content/content.css
+├── popup/popup.html + popup.js
+├── sidepanel/sidepanel.html + sidepanel.js
+├── options/options.html + options.js
+├── lib/
+│   ├── config.js
+│   ├── messaging.js
+│   ├── ai-client.js
+│   ├── youtube-scraper.js
+│   └── prompt-engine.js
+└── assets/icons/ + styles.css
+backend/
+├── src/server.js
+├── src/ai-service.js
+└── .env.example
+```
+
+# Architecture Rules
+
+## Manifest V3
+- Service worker only (never Manifest V2 background page)
+- `host_permissions`: `https://www.youtube.com/*`, `https://studio.youtube.com/*` only
+- Prefer static `content_scripts` over `chrome.scripting.executeScript` (cleaner Chrome Web Store review)
+- Background: `"type": "module"`
+- Minimal permissions: `storage`, `activeTab`, `sidePanel`, `alarms`
+
+## YouTube SPA Navigation (CRITICAL)
+YouTube is a SPA — `DOMContentLoaded` fires only once.
+- Watch URL changes via `MutationObserver` on `document.body` comparing `location.href`
+- Also listen for custom `yt-navigate-finish` on `document` when available
+- Debounce `init()` by 1000–1500ms after URL change (DOM hydration delay)
+- Use incrementing `initId` to cancel stale async work (race condition guard)
+- Disconnect observer on `pagehide`
+- Re-inject UI on every navigation, not only first load
+
+## YouTube Data Extraction (`youtube-scraper.js`)
+Always use `waitForElement(selector, timeoutMs)` before reading dynamic nodes.
+
+| Field | Primary selector | Fallbacks |
+|-------|------------------|-----------|
+| videoId | `new URLSearchParams(location.search).get('v')` | `/[?&]v=([^&]+)/` on `location.href` |
+| title | `ytd-watch-metadata #title yt-formatted-string` | `h1.ytd-watch-metadata yt-formatted-string`, `h1.title yt-formatted-string`, `document.title.replace(' - YouTube','')` |
+| channel | `#owner #channel-name a` | `ytd-channel-name a`, `ytInitialPlayerResponse.videoDetails.author` |
+| description | `#description-inline-expander #snippet-text` | `#description-text` |
+| thumbnail | `https://img.youtube.com/vi/{videoId}/maxresdefault.jpg` | `hqdefault.jpg`, `mqdefault.jpg` |
+
+Transcript extraction priority:
+1. Injected page script reads `window.ytInitialPlayerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks`
+2. Parse `captionTracks` JSON from inline `<script>` HTML
+3. Fetch caption XML/JSON from `baseUrl + '&fmt=json3'` or `&fmt=vtt`
+4. Click "Show transcript" and scrape `.ytd-transcript-segment-renderer` or `.segment-timestamp` + `.segment-text`
+
+`ytInitialPlayerResponse` lives in page MAIN world — use `chrome.scripting.executeScript({ world: 'MAIN', func })` from service worker OR inject a `<script>` tag that `postMessage`s results back. Content script isolated world cannot read it directly.
+
+Never assume selectors are stable — wrap every read in try/catch with fallbacks.
+
+## Thumbnail Fetch (CORS)
+Fetch thumbnails from service worker or background, not content script canvas:
+```javascript
+const res = await fetch(thumbnailUrl);
+const blob = await res.blob();
+const base64 = await blobToBase64(blob); // FileReader in service worker
+```
+
+## Messaging (`lib/messaging.js`)
+```javascript
+export async function sendMessage(type, data = {}) {
+  try {
+    const res = await chrome.runtime.sendMessage({ type, ...data });
+    if (res?.error) return { success: false, message: res.error };
+    return res ?? {};
+  } catch (err) {
+    return { success: false, message: err.message };
+  }
+}
+```
+
+Message types: `EXTRACT_VIDEO_DATA`, `ANALYZE_THUMBNAIL`, `GENERATE_SEO`, `GENERATE_HOOKS`, `SUMMARIZE_TRANSCRIPT`
+
+## AI Integration
+
+### Provider priority
+1. Backend proxy (`/api/analyze-thumbnail`, `/api/generate-seo`)
+2. Direct BYOK from service worker
+3. Demo mode — show template output, never throw to UI
+
+### Gemini (default)
+- Model: `gemini-2.5-flash` for vision + JSON (NOT `gemini-2.5-flash-image` — no JSON mode)
+- Always set both `responseMimeType: "application/json"` AND `responseSchema`
+- Resize thumbnails to max 1280px width before base64
+- Temperature: 0.3 analysis, 0.7 creative titles
+
+```javascript
+generationConfig: {
+  responseMimeType: 'application/json',
+  responseSchema: { type: 'object', properties: { /* ... */ }, required: ['ctr_score'] },
+  temperature: 0.3
+}
+```
+
+### OpenAI vision fallback
+- Model: `gpt-4o` (not 4o-mini for vision quality)
+- Use `detail: 'low'` for simple thumbnail scoring (lower token cost)
+- `response_format: { type: 'json_object' }`
+
+### Thumbnail analysis JSON schema
+```json
+{
+  "ctr_score": 1,
+  "quality_ctr_note": "string",
+  "strengths": ["string"],
+  "weaknesses": ["string"],
+  "text_readability": "good",
+  "face_detected": true,
+  "color_contrast": "high",
+  "emotion_trigger": "curiosity",
+  "recommendations": ["string"],
+  "improved_title_suggestion": "string"
+}
+```
+
+### SEO generation JSON schema
+```json
+{
+  "titles": [{ "text": "string", "ctr_potential": 1, "style": "curiosity" }],
+  "description": "string",
+  "tags": ["string"],
+  "hashtags": ["string"],
+  "chapters": [{ "time": "0:00", "title": "string" }],
+  "hook_script_15sec": "string",
+  "packaging_score": 1
+}
+```
+
+### Security (NEVER violate)
+- NEVER store API keys in content scripts or page DOM
+- NEVER commit API keys
+- Keys only in `chrome.storage.local`, read from service worker/backend
+- Sanitize AI output before DOM injection (`textContent` or DOMPurify)
+- YouTube Data API calls only from backend (key protection)
+
+# UI/UX
+- Primary UI: Side Panel
+- Loading skeleton during AI calls (5–15s)
+- CTR badge: red <5, yellow 5–7, green >7
+- Copy buttons for title/description
+- Friendly error messages (Hindi + English), never raw API errors
+- Options: API key, provider (Gemini/OpenAI), language (hi/en)
+
+# Code Quality
+- ES modules, explicit imports
+- try/catch on all async with user-friendly fallback
+- No globals — module scope only
+- Functions <50 lines; extract helpers when longer
+- JSDoc on exports
+- camelCase functions, UPPER_SNAKE constants
+- Debug logging behind `DEBUG` flag only
+
+# What NOT to Do
+- No Manifest V2, jQuery, React/Vue/webpack (unless requested)
+- No AI calls from content scripts
+- No `<all_urls>` host_permissions
+- No blocking YouTube rendering
+- No CTR-only optimization — always mention Quality CTR (CTR + retention alignment)
+- No refactor of unrelated files per task
+- Do not use `gemini-2.5-flash-image` for JSON structured output
+
+# Build Order
+1. manifest.json + service worker + messaging.js
+2. youtube-scraper.js + SPA navigation
+3. sidepanel shell + loading states
+4. ai-client.js (Gemini)
+5. prompt-engine.js
+6. options page (BYOK)
+7. backend proxy (optional)
+8. A/B thumbnail compare
+9. transcript summary + hooks
+10. competitor analysis (YouTube Data API via backend)
+
+# Task Brief Format
+```
+Implement [feature]
+Files: @extension/lib/youtube-scraper.js, @extension/sidepanel/sidepanel.js
+Done when: [verifiable outcome]
+Out of scope: [explicit exclusions]
+```
