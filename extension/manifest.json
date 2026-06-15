@@ -8,7 +8,8 @@
     "activeTab",
     "sidePanel",
     "alarms",
-    "scripting"
+    "scripting",
+    "tabs"
   ],
   "host_permissions": [
     "https://*.tradingview.com/*",

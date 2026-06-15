@@ -20,6 +20,7 @@
     .step h3 { font-size: 15px; margin-bottom: 4px; }
     .step p { font-size: 13px; color: var(--tp-text-muted); }
     .cta { padding: 24px; }
+    .cta a.tp-btn { text-decoration: none; display: flex; }
     .trial-box {
       background: rgba(99, 102, 241, 0.1);
       border: 1px solid var(--tp-primary);
@@ -29,6 +30,7 @@
       margin: 0 24px 16px;
     }
     .trial-box strong { color: var(--tp-primary); font-size: 18px; }
+    .status { text-align: center; font-size: 13px; color: var(--tp-success); min-height: 20px; margin-top: 8px; }
   </style>
 </head>
 <body>
@@ -73,13 +75,14 @@
   </div>
 
   <div class="cta">
-    <button class="tp-btn tp-btn-primary" id="btnSettings">⚙️ Open Settings & Add API Key</button>
+  <button type="button" class="tp-btn tp-btn-primary" id="btnSettings">⚙️ Open Settings & Add API Key</button>
     <div style="margin-top:10px">
-      <button class="tp-btn tp-btn-secondary" id="btnTradingView">📊 Open TradingView</button>
+      <a class="tp-btn tp-btn-secondary" id="btnTradingView" href="https://www.tradingview.com/chart/" target="_blank" rel="noopener">📊 Open TradingView</a>
     </div>
     <div style="margin-top:10px">
-      <button class="tp-btn tp-btn-secondary" id="btnSkip">Skip — Start Using</button>
+      <button type="button" class="tp-btn tp-btn-secondary" id="btnSkip">Skip — Start Using</button>
     </div>
+    <div class="status" id="status"></div>
   </div>
 
   <div class="tp-disclaimer">
@@ -87,20 +90,40 @@
   </div>
 
   <script>
-    document.getElementById('btnSettings').addEventListener('click', () => {
-      chrome.tabs.create({ url: chrome.runtime.getURL('options/options.html#ai') });
-      finishOnboarding();
-    });
-    document.getElementById('btnTradingView').addEventListener('click', () => {
-      chrome.tabs.create({ url: 'https://www.tradingview.com/chart/' });
-      finishOnboarding();
-    });
-    document.getElementById('btnSkip').addEventListener('click', finishOnboarding);
+    const status = document.getElementById('status');
+
+    function showStatus(msg) {
+      status.textContent = msg;
+    }
 
     function finishOnboarding() {
       chrome.storage.local.set({ tp_onboardingComplete: true });
-      window.close();
     }
+
+    document.getElementById('btnSettings').addEventListener('click', () => {
+      finishOnboarding();
+      try {
+        chrome.runtime.openOptionsPage(() => {
+          if (chrome.runtime.lastError) {
+            window.open(chrome.runtime.getURL('options/options.html#ai'), '_blank');
+          }
+          showStatus('✓ Settings opened — add your API key there');
+        });
+      } catch (e) {
+        window.open(chrome.runtime.getURL('options/options.html#ai'), '_blank');
+        showStatus('✓ Settings opened in new tab');
+      }
+    });
+
+    document.getElementById('btnTradingView').addEventListener('click', () => {
+      finishOnboarding();
+      showStatus('✓ TradingView opened — look for ⚡ AI button on chart');
+    });
+
+    document.getElementById('btnSkip').addEventListener('click', () => {
+      finishOnboarding();
+      showStatus('✓ Ready! Click extension icon ⚡ in Chrome toolbar');
+    });
   </script>
 </body>
 </html>
