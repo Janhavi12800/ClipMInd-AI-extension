@@ -1,119 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Subscribe — TradePrompt AI Pro</title>
-  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #0f172a, #1e1b4b);
-      color: #f1f5f9;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-    .card {
-      background: #1e293b;
-      border: 1px solid #334155;
-      border-radius: 16px;
-      padding: 32px;
-      max-width: 420px;
-      width: 100%;
-      text-align: center;
-    }
-    .logo { font-size: 40px; margin-bottom: 8px; }
-    h1 { font-size: 22px; margin-bottom: 4px; }
-    .price { font-size: 36px; font-weight: 800; color: #6366f1; margin: 16px 0; }
-    .price span { font-size: 14px; font-weight: 400; color: #94a3b8; }
-    .features { text-align: left; margin: 20px 0; font-size: 13px; color: #94a3b8; }
-    .features li { margin: 6px 0; list-style: none; }
-    .features li::before { content: '✓ '; color: #10b981; }
-  input {
-      width: 100%;
-      padding: 12px;
-      border-radius: 8px;
-      border: 1px solid #334155;
-      background: #334155;
-      color: #f1f5f9;
-      font-size: 14px;
-      margin-bottom: 12px;
-    }
-    .btn {
-      width: 100%;
-      padding: 14px;
-      border: none;
-      border-radius: 10px;
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
-      color: white;
-      font-size: 16px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    .btn:hover { opacity: 0.9; }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .note { font-size: 11px; color: #64748b; margin-top: 12px; }
-    .error { color: #ef4444; font-size: 13px; margin-top: 8px; }
-    .trial-badge {
-      display: inline-block;
-      background: rgba(245, 158, 11, 0.2);
-      color: #f59e0b;
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-      margin-bottom: 12px;
-    }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <div class="logo">⚡</div>
-    <h1>TradePrompt AI Pro</h1>
-    <div class="trial-badge">3-Day Free Trial Included</div>
-    <div class="price">₹100<span>/month</span></div>
-
-    <ul class="features">
-      <li>Unlimited AI prompt generation</li>
-      <li>Vision chart analysis (GPT-4o / Claude)</li>
-      <li>NSE/BSE, Forex & Crypto templates</li>
-      <li>Multi-indicator confluence engine</li>
-      <li>Cancel anytime via Razorpay</li>
-    </ul>
-
-    <input type="email" id="email" placeholder="your@email.com" required>
-    <button class="btn" id="payBtn" onclick="startCheckout()">Start Free Trial →</button>
-    <div class="error" id="error"></div>
-    <p class="note">Payment secured by Razorpay. UPI, Cards, NetBanking accepted.</p>
-    <p class="note" id="demoNote" style="display:none;margin-top:8px;color:#10b981">
-      Demo mode: trial activates instantly without payment.
-    </p>
-  </div>
-
-  <script>
-    fetch('/api/health').then(r => r.json()).then(d => {
-      if (d.demoMode) document.getElementById('demoNote').style.display = 'block';
-    }).catch(() => {});
-    const params = new URLSearchParams(window.location.search);
-    const prefillEmail = params.get('email') || '';
-    const prefillSubId = params.get('subscription_id') || '';
-    document.getElementById('email').value = prefillEmail;
-
-    if (prefillSubId && prefillEmail) {
-      startCheckout();
-    }
-
     async function startCheckout() {
       const email = document.getElementById('email').value.trim();
       const btn = document.getElementById('payBtn');
       const errEl = document.getElementById('error');
 
       if (!email || !email.includes('@')) {
-        errEl.textContent = 'Please enter a valid email';
+        errEl.textContent = 'Valid email daalo';
         return;
       }
 
@@ -121,105 +12,44 @@
       btn.textContent = 'Activating trial...';
       errEl.textContent = '';
 
-      async function goSuccess(data) {
+      function goSuccess(data) {
         const extId = new URLSearchParams(window.location.search).get('ext_id') || '';
         const activateParams = new URLSearchParams({
-          license_key: data.licenseKey,
-          expiry: data.expiry,
+          license_key: data.licenseKey || ('tp_' + Date.now()),
+          expiry: data.expiry || new Date(Date.now() + 30 * 86400000).toISOString(),
           email
         });
         if (extId) activateParams.set('ext_id', extId);
         window.location.href = `/success.html?${activateParams}`;
       }
 
+      let data = {};
       try {
         const res = await fetch('/api/subscribe', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email })
         });
-        const data = await res.json();
+        data = await res.json();
+      } catch (_) {}
 
-        if (data.demo || data.licenseKey) {
-          await goSuccess(data);
-          return;
-        }
-
-        if (!res.ok) {
-          const demo = await fetch('/api/demo-activate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email })
-          });
-          const demoData = await demo.json();
-          if (demo.ok && demoData.licenseKey) {
-            await goSuccess(demoData);
-            return;
-          }
-          throw new Error(data.hint ? `${data.message} — ${data.hint}` : data.message);
-        }
-
-        const extId = new URLSearchParams(window.location.search).get('ext_id') || '';
-        openRazorpay(data.subscriptionId, email, data.keyId, extId);
-      } catch (e) {
+      if (!data.licenseKey) {
         try {
           const demo = await fetch('/api/demo-activate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email })
           });
-          const demoData = await demo.json();
-          if (demo.ok && demoData.licenseKey) {
-            await goSuccess(demoData);
-            return;
-          }
+          data = await demo.json();
         } catch (_) {}
-        await goSuccess({ licenseKey: 'tp_' + Date.now(), expiry: new Date(Date.now() + 30 * 86400000).toISOString(), email });
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Start Free Trial →';
       }
-    }
 
-    function openRazorpay(subscriptionId, email, keyId, extId) {
-      const options = {
-        key: keyId || 'rzp_test_placeholder',
-        subscription_id: subscriptionId,
-        name: 'TradePrompt AI',
-        description: 'Pro Monthly Subscription',
-        prefill: { email },
-        theme: { color: '#6366f1' },
-        handler: async function (response) {
-          try {
-            const res = await fetch('/api/verify-payment', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ ...response, email })
-            });
-            const data = await res.json();
-            if (data.success) {
-              const p = new URLSearchParams({
-                license_key: data.licenseKey,
-                expiry: data.expiry,
-                email
-              });
-              if (extId) p.set('ext_id', extId);
-              window.location.href = `/success.html?${p}`;
-            } else {
-              document.getElementById('error').textContent = data.message || 'Verification failed';
-            }
-          } catch (e) {
-            document.getElementById('error').textContent = e.message;
-          }
-        }
-      };
+      if (!data.licenseKey) {
+        data = {
+          licenseKey: 'tp_' + Date.now(),
+          expiry: new Date(Date.now() + 30 * 86400000).toISOString()
+        };
+      }
 
-      const rzp = new Razorpay(options);
-      rzp.on('payment.failed', function (resp) {
-        document.getElementById('error').textContent = resp.error.description;
-      });
-      rzp.open();
+      goSuccess(data);
     }
-  </script>
-</body>
-</html>

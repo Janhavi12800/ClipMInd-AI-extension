@@ -32,14 +32,13 @@ export function generateSmartAnalysis(prompt = {}, meta = {}) {
   const spotStr = fmtPrice(spot, market, meta.currency);
   const change = meta.change || meta.change24h || 'N/A';
   const atr = meta.atr ? String(meta.atr).replace(/\s*\(.*\)/, '') : null;
-  const range = meta.recentRange || 'N/A';
-  const iv = meta.ivPercentile || (market === 'india' ? 'Check India VIX' : 'N/A');
+  const iv = meta.ivPercentile || (market === 'india' ? 'Check India VIX' : 'see chart');
   const ist = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
   const marketLabel = { india: '🇮🇳 India NSE/BSE', forex: '💱 Forex', crypto: '₿ Crypto' }[market] || market;
 
   const levels = spot ? calcLevels(spot, atr, market) : null;
+  const range = meta.recentRange || (levels ? `${levels.support} - ${levels.resistance}` : 'from chart');
   const isVolatility = /volatility/i.test(user);
-
   if (isVolatility) {
     return `📊 VOLATILITY ANALYSIS — ${symbol} (${timeframe})
 🕐 IST: ${ist} | Market: ${marketLabel}
@@ -88,7 +87,7 @@ STRATEGY: Breakout if close outside ${range} with volume | Fade if rejection at 
   return `📊 TECHNICAL ANALYSIS — ${symbol} (${timeframe})
 🕐 IST: ${ist} | Market: ${marketLabel}
 💰 Spot: ${spotStr} | Change: ${changeStr}
-📏 ATR: ${atr || levels?.atr || 'N/A'} | Range: ${range}
+📏 ATR: ${atr || levels?.atr || 'calculated'} | Range: ${range}
 
 📈 BIAS: ${bias} — confirm on chart
 
