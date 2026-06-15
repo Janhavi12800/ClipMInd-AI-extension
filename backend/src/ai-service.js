@@ -92,7 +92,7 @@ async function callOpenAI({ system, user, key, fast }) {
 
   const data = await res.json();
   if (!res.ok || !data.choices?.[0]?.message?.content) {
-    throw new Error(data.error?.message || 'openai failed');
+    throw new Error('openai');
   }
   return data.choices[0].message.content;
 }
