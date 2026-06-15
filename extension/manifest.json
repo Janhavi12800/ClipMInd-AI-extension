@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "TradePrompt AI — Smart Trading Prompts",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Professional AI prompt engineering for Indian stocks (NSE/BSE), Forex & Crypto. 1-click chart analysis with vision AI.",
   "permissions": [
     "storage",

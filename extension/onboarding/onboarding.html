@@ -7,29 +7,14 @@
   <style>
     body { max-width: 520px; margin: 0 auto; min-height: 100vh; }
     .hero { text-align: center; padding: 32px 24px 16px; }
-    .hero .logo { font-size: 56px; margin-bottom: 8px; }
-    .hero h1 { font-size: 26px; margin-bottom: 8px; }
+    .hero .logo { font-size: 56px; margin-bottom: 8px; filter: drop-shadow(0 4px 12px rgba(143,163,243,0.3)); }
+    .hero h1 { font-size: 26px; margin-bottom: 8px; letter-spacing: -0.03em; }
     .hero p { color: var(--tp-text-muted); font-size: 14px; }
     .step { display: flex; gap: 14px; padding: 14px 24px; align-items: flex-start; }
-    .step-num {
-      width: 32px; height: 32px; border-radius: 50%;
-      background: var(--tp-primary); color: white;
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 700; font-size: 14px; flex-shrink: 0;
-    }
     .step h3 { font-size: 15px; margin-bottom: 4px; }
     .step p { font-size: 13px; color: var(--tp-text-muted); }
     .cta { padding: 24px; }
     .cta a.tp-btn { text-decoration: none; display: flex; }
-    .trial-box {
-      background: rgba(99, 102, 241, 0.1);
-      border: 1px solid var(--tp-primary);
-      border-radius: var(--tp-radius);
-      padding: 16px;
-      text-align: center;
-      margin: 0 24px 16px;
-    }
-    .trial-box strong { color: var(--tp-primary); font-size: 18px; }
     .status { text-align: center; font-size: 13px; color: var(--tp-success); min-height: 20px; margin-top: 8px; }
   </style>
 </head>
@@ -40,34 +25,34 @@
     <p>Professional AI trading prompts for Indian stocks, Forex & Crypto</p>
   </div>
 
-  <div class="trial-box">
+  <div class="tp-trial-box">
     <strong>🎉 3-Day Free Trial Activated!</strong>
     <p style="font-size:13px;color:var(--tp-text-muted);margin-top:6px">All Pro features unlocked. No credit card needed.</p>
   </div>
 
-  <div class="step">
-    <div class="step-num">1</div>
+  <div class="tp-step">
+    <div class="tp-step-num">1</div>
     <div>
       <h3>Add Your AI API Key</h3>
       <p>Open Settings → AI Provider → Enter OpenAI or Claude API key</p>
     </div>
   </div>
-  <div class="step">
-    <div class="step-num">2</div>
+  <div class="tp-step">
+    <div class="tp-step-num">2</div>
     <div>
       <h3>Open TradingView</h3>
       <p>Go to any chart — NSE, BSE, Forex, or Crypto</p>
     </div>
   </div>
-  <div class="step">
-    <div class="step-num">3</div>
+  <div class="tp-step">
+    <div class="tp-step-num">3</div>
     <div>
       <h3>Click ⚡ AI Button</h3>
       <p>Select a template for instant 1-click AI analysis</p>
     </div>
   </div>
-  <div class="step">
-    <div class="step-num">4</div>
+  <div class="tp-step">
+    <div class="tp-step-num">4</div>
     <div>
       <h3>Get Analysis</h3>
       <p>Copy prompts or run AI analysis directly in the side panel</p>
