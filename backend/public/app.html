@@ -4,33 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TradePrompt AI — Web App</title>
-  <style>
-    :root{--p:#6366f1;--bg:#0f172a;--card:#1e293b;--text:#f1f5f9;--muted:#94a3b8;--border:#334155;--ok:#10b981}
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-    .header{background:linear-gradient(135deg,var(--p),#8b5cf6);padding:20px 24px;display:flex;align-items:center;gap:12px}
-    .header h1{font-size:20px}
-    .badge{margin-left:auto;background:rgba(255,255,255,.2);padding:4px 10px;border-radius:20px;font-size:12px}
-    .wrap{max-width:900px;margin:0 auto;padding:20px}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px}
-    .title{font-size:11px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;font-weight:600;letter-spacing:.5px}
-    .tabs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-    .tab{padding:10px;text-align:center;border-radius:8px;background:#334155;cursor:pointer;font-size:13px;font-weight:600;border:1px solid var(--border)}
-    .tab.on{background:var(--p);border-color:var(--p)}
-    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    input,select{width:100%;padding:10px;background:#334155;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px}
-    .tpl{display:flex;gap:10px;padding:12px;background:#334155;border-radius:8px;margin-bottom:8px;cursor:pointer;border:1px solid var(--border)}
-    .tpl:hover{border-color:var(--p)}
-    .btn{width:100%;padding:12px;border:none;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;margin-top:8px}
-    .btn-p{background:linear-gradient(135deg,var(--p),#8b5cf6);color:#fff}
-    .btn-s{background:#334155;color:var(--text);border:1px solid var(--border)}
-    .out{background:#0a0f1e;border:1px solid var(--border);border-radius:10px;padding:16px;font-size:13px;line-height:1.7;white-space:pre-wrap;min-height:120px;max-height:400px;overflow-y:auto}
-    .row{display:flex;gap:8px;margin-top:8px}
-    .row .btn{flex:1;margin:0}
-    .ok{color:var(--ok);font-size:13px;margin-top:8px}
-    .warn{background:rgba(245,158,11,.1);border:1px solid #f59e0b;border-radius:8px;padding:12px;font-size:13px;margin-bottom:16px}
-    a{color:var(--p)}
-  </style>
+  <link rel="stylesheet" href="/theme.css">
 </head>
 <body>
 <div class="header">

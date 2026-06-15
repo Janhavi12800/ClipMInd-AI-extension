@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube AI Growth Assistant",
+  "version": "1.0.0",
+  "description": "AI thumbnail analysis, SEO titles, and CTR packaging advice for YouTube creators.",
+  "permissions": ["storage", "activeTab", "sidePanel", "alarms", "scripting"],
+  "host_permissions": [
+    "https://www.youtube.com/*",
+    "https://studio.youtube.com/*",
+    "https://img.youtube.com/*"
+  ],
+  "background": {
+    "service_worker": "background/service-worker.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "YouTube AI Growth Assistant"
+  },
+  "side_panel": {
+    "default_path": "sidepanel/sidepanel.html"
+  },
+  "options_page": "options/options.html",
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.youtube.com/*",
+        "https://studio.youtube.com/*"
+      ],
+      "js": ["content/youtube.js"],
+      "css": ["content/content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "assets/icons/icon16.png",
+    "48": "assets/icons/icon48.png",
+    "128": "assets/icons/icon128.png"
+  }
+}

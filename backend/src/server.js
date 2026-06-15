@@ -17,7 +17,15 @@ const PORT = process.env.PORT || 3001;
 const API_BASE_URL = process.env.API_BASE_URL || `http://localhost:${PORT}`;
 
 app.use(cors({
-  origin: [/chrome-extension:\/\//, /http:\/\/localhost/, /https:\/\/.*\.tradeprompt\.ai/],
+  origin: [
+    /chrome-extension:\/\//,
+    /http:\/\/localhost/,
+    /http:\/\/127\.0\.0\.1/,
+    /https:\/\/.*\.tradeprompt\.ai/,
+    /https:\/\/.*\.onrender\.com/,
+    /https:\/\/.*\.up\.railway\.app/,
+    /https:\/\/.*\.railway\.app/
+  ],
   credentials: true
 }));
 app.use(express.json());
