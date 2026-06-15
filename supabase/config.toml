@@ -96,3 +96,6 @@ verify_jwt = false
 
 [functions.auth-session]
 verify_jwt = false
+
+[functions.payments]
+verify_jwt = false

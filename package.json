@@ -1,0 +1,29 @@
+{
+  "name": "techshield-ai",
+  "private": true,
+  "version": "1.0.0",
+  "description": "TechShield AI — Enterprise Chrome Extension + SaaS Platform",
+  "scripts": {
+    "build": "npm run build:frontend && npm run build:extension",
+    "build:frontend": "cd frontend && npm ci && npm run build",
+    "build:extension": "cd extension && npm ci && npm run build",
+    "test": "npm run test:unit && npm run test:integration",
+    "test:unit": "vitest run --config tests/vitest.config.ts",
+    "test:integration": "vitest run --config tests/vitest.integration.config.ts",
+    "test:e2e": "playwright test --config tests/playwright.config.ts",
+    "test:security": "node tests/security/security-scan.mjs",
+    "test:load": "k6 run tests/load/api-load.js",
+    "lint": "npm run lint:frontend && npm run lint:extension",
+    "lint:frontend": "cd frontend && npm run lint",
+    "lint:extension": "cd extension && npm run build"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.51.0",
+    "@types/node": "^22.13.0",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.5"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

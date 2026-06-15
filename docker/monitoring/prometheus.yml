@@ -1,0 +1,23 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'techshield-frontend'
+    static_configs:
+      - targets: ['frontend:80']
+    metrics_path: /health
+
+  - job_name: 'supabase-edge-functions'
+    static_configs:
+      - targets: ['${SUPABASE_FUNCTIONS_URL}']
+    metrics_path: /api/v1/health
+    scrape_interval: 30s
+
+rule_files:
+  - 'alerts.yml'
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']

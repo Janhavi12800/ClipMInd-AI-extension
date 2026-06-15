@@ -360,6 +360,75 @@ GET /api/v1/subscription
 
 ---
 
+### Payments
+
+**Base prefix:** `/payments` (separate Edge Function)
+
+#### Create Checkout Session
+
+```
+POST /payments/checkout
+```
+
+**Request:**
+```json
+{
+  "plan_tier": "pro",
+  "provider": "stripe",
+  "interval": "monthly",
+  "success_url": "https://app.techshield.ai/billing?success=true",
+  "cancel_url": "https://app.techshield.ai/billing?canceled=true"
+}
+```
+
+**Response (200):**
+```json
+{
+  "data": {
+    "checkout_url": "https://checkout.stripe.com/...",
+    "session_id": "uuid"
+  },
+  "request_id": "req_abc123"
+}
+```
+
+#### Stripe Billing Portal
+
+```
+POST /payments/portal
+```
+
+**Request:**
+```json
+{ "return_url": "https://app.techshield.ai/billing" }
+```
+
+#### Cancel Subscription
+
+```
+POST /payments/cancel
+```
+
+#### Activate Free Plan
+
+```
+POST /payments/activate-free
+```
+
+#### Webhooks (no auth)
+
+```
+POST /payments/webhooks/stripe
+POST /payments/webhooks/razorpay
+```
+
+Webhook signatures are verified via `stripe-signature` and `x-razorpay-signature` headers.
+
+**Supported plans:** `free`, `pro`, `business`  
+**Supported providers:** `stripe` (global), `razorpay` (India/APAC)
+
+---
+
 ### Prompts
 
 #### List Prompt Templates
