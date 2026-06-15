@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TechShield AI Panel</title>
+  <link rel="stylesheet" href="../ui/shared.css" />
+  <link rel="stylesheet" href="./sidepanel.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="sp-header">
+      <div class="brand"><span>🛡️</span><strong>TechShield AI</strong></div>
+      <div id="tab-badge" class="tab-badge"></div>
+    </header>
+
+    <nav class="tabs" id="main-tabs" aria-label="Main modules">
+      <button class="tab active" data-panel="panel-home">Home</button>
+      <button class="tab" data-panel="panel-ai">AI</button>
+      <button class="tab" data-panel="panel-security">Security</button>
+      <button class="tab" data-panel="panel-seo">SEO</button>
+      <button class="tab" data-panel="panel-tech">Tech</button>
+      <button class="tab" data-panel="panel-notes">Notes</button>
+      <button class="tab" data-panel="panel-productivity">Tools</button>
+    </nav>
+
+    <div class="panels">
+      <section id="panel-home" class="panel active"></section>
+      <section id="panel-ai" class="panel"></section>
+      <section id="panel-security" class="panel"></section>
+      <section id="panel-seo" class="panel"></section>
+      <section id="panel-tech" class="panel"></section>
+      <section id="panel-notes" class="panel"></section>
+      <section id="panel-productivity" class="panel"></section>
+    </div>
+  </div>
+  <script type="module" src="./sidepanel.ts"></script>
+</body>
+</html>
