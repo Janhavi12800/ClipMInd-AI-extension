@@ -1,0 +1,22 @@
+{
+  "name": "techshield-ai-extension",
+  "version": "1.0.0",
+  "description": "TechShield AI — Enterprise Chrome Extension for security, SEO, AI prompts, and productivity",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "icons": "node scripts/generate-icons.mjs",
+    "dev": "npm run icons && vite",
+    "build": "npm run icons && tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@crxjs/vite-plugin": "^2.0.0",
+    "@types/chrome": "^0.0.304",
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0"
+  },
+  "dependencies": {
+    "idb": "^8.0.0"
+  }
+}

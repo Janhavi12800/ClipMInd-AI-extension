@@ -33,6 +33,14 @@ supabase db reset
 supabase functions serve --env-file .env
 ```
 
+### Chrome Extension
+```bash
+cd extension
+npm install
+npm run build
+# Load extension/dist in chrome://extensions
+```
+
 ## Modules
 
 1. AI Prompt Generator

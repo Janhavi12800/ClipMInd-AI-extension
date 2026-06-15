@@ -1,0 +1,16 @@
+.popup { width: 360px; min-height: 480px; display: flex; flex-direction: column; }
+.popup-header { display: flex; align-items: center; justify-content: space-between; padding: 12px; border-bottom: 1px solid var(--border); }
+.brand { display: flex; align-items: center; gap: 8px; }
+.brand-icon { font-size: 20px; }
+.version { font-size: 10px; color: var(--text-muted); display: block; }
+.tab-context { margin: 10px 12px 0; }
+.tab-url { font-size: 11px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tab-title { font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.scores { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 10px 12px; }
+.score-card { text-align: center; padding: 10px 4px; }
+.quick-nav { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 0 12px; flex: 1; align-content: start; }
+.quick-btn { background: var(--bg-secondary); border: 1px solid var(--border); padding: 12px 8px; font-size: 11px; border-radius: var(--radius); color: var(--text); }
+.quick-btn:hover { background: var(--bg-tertiary); }
+.alert-banner { margin: 8px 12px; padding: 8px 12px; background: #fef2f2; color: #991b1b; border-radius: var(--radius); font-size: 11px; }
+.dark .alert-banner { background: #7f1d1d; color: #fecaca; }
+.popup-footer { padding: 12px; border-top: 1px solid var(--border); }
