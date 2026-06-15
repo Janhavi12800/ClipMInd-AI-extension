@@ -3,7 +3,6 @@
   "name": "TradePrompt AI — Smart Trading Prompts",
   "version": "1.0.0",
   "description": "Professional AI prompt engineering for Indian stocks (NSE/BSE), Forex & Crypto. 1-click chart analysis with vision AI.",
-  "default_locale": "en",
   "permissions": [
     "storage",
     "activeTab",
