@@ -1,127 +1,68 @@
-# ⚡ TradePrompt AI — SIRF AAPKO YE 5 KAAM KARNE HAIN
+# TradePrompt AI — Ab Seedha Chalega
 
-> Baaki **sab kuch ready** hai — code, backend, extension, payment, marketing, screenshots.
+## Sabse Aasaan Tarika (Extension ki zaroorat NAHI)
 
----
-
-## ✅ Maine (AI) Jo Kar Diya — Aapko Nahi Karna
-
-- [x] Poora Chrome Extension banaya
-- [x] 10+ Trading prompt templates (NSE/BSE, Forex, Crypto)
-- [x] Vision AI chart analysis
-- [x] Payment system (₹100/month, 3-day trial)
-- [x] Landing page + checkout page
-- [x] Admin dashboard
-- [x] Marketing posts (Hindi + English)
-- [x] Chrome Store screenshots
-- [x] Extension zip file
-- [x] Setup scripts
-- [x] Poori documentation
-
----
-
-## 🔴 SIRF AAPKO YE 5 KAAM (Koi aur nahi kar sakta)
-
-### Kaam 1: Project Download (2 min) — Password NAHI
-
-**Option A — ZIP (Sabse aasaan, password nahi):**
-1. Kholo: https://github.com/Janhavi12800/ClipMInd-AI-extension
-2. Green **Code** button → **Download ZIP**
-3. ZIP extract karo `Downloads` folder mein
-4. Terminal kholo:
-```bash
-cd ~/Downloads/ClipMInd-AI-extension-*
-bash scripts/install-local.sh
-```
-
-**Option B — Git:**
-```bash
-cd ~
-git clone https://github.com/Janhavi12800/ClipMInd-AI-extension.git
-cd ClipMInd-AI-extension
-bash scripts/install-local.sh
-```
-
----
-
-### Kaam 2: Backend Start (1 min) — Password NAHI
+### Step 1 — Backend chalao
 
 ```bash
-cd ~/Downloads/ClipMInd-AI-extension-*/backend
+cd /home/blocksone/ClipMInd-AI-extension/ClipMInd-AI-extension-main/backend
 npm run dev
 ```
 
-Browser mein check: http://localhost:3001
+### Step 2 — Browser mein kholo
+
+```
+http://localhost:3001/app.html
+```
+
+**Bas!** Yahi se poora app chalega — market select, template, AI analysis sab.
+
+### Step 3 — OpenAI API Key
+
+1. https://platform.openai.com/api-keys pe jao
+2. Key banao (sk-...)
+3. App mein paste karo → Save
+
+### Step 4 — TradingView (optional)
+
+TradingView pe chart kholo → extension icon → ya seedha app.html use karo.
 
 ---
 
-### Kaam 3: Chrome Extension Load (2 min) — Password NAHI
+## Agar purana code hai (ZIP se download kiya)
 
-1. Chrome kholo
-2. Address bar: `chrome://extensions`
-3. **Developer mode** ON (top right)
-4. **Load unpacked** click
-5. Folder select: `extension` (project ke andar)
+GitHub se latest lo:
 
----
+```bash
+cd /home/blocksone/ClipMInd-AI-extension
+git clone https://github.com/Janhavi12800/ClipMInd-AI-extension.git fresh
+cd fresh/backend
+npm install
+npm run setup:demo
+npm run dev
+```
 
-### Kaam 4: OpenAI API Key (5 min) — Aapka account chahiye
-
-> Ye **free nahi** hai but bahut sasta (~₹50-200/month)
-
-1. Jao: https://platform.openai.com/signup
-2. Account banao
-3. **API Keys** → **Create new secret key**
-4. Extension → **Settings** → **AI Provider** → key paste → Save
-5. **Test Connection** click
+Phir browser: **http://localhost:3001/app.html**
 
 ---
 
-### Kaam 5: Test Karo (2 min) — Password NAHI
+## Links
 
-1. Kholo: https://www.tradingview.com/chart/
-2. Search: `RELIANCE` ya `NIFTY`
-3. **⚡ AI** button click (bottom right)
-4. Template select → Analysis dekho
-
-**✅ Agar analysis aaya = SAB KAAM KAR RAHA HAI!**
-
----
-
-## 🟡 BAAD MEIN (Jab Sell Karna Ho)
-
-Ye tab karna jab extension test ho jaye:
-
-| Kaam | Kahan | Cost | Time |
-|------|-------|------|------|
-| Razorpay account | dashboard.razorpay.com | Free | 30 min + KYC |
-| Backend deploy | railway.app | Free tier | 15 min |
-| Chrome Web Store | chrome.google.com/webstore/devconsole | $5 | 1-2 days review |
-
-Inke liye guide: `docs/LAUNCH_CHECKLIST.md`
+| Page | URL |
+|------|-----|
+| **Main App** | http://localhost:3001/app.html |
+| Landing | http://localhost:3001/ |
+| Admin | http://localhost:3001/admin.html |
+| Health | http://localhost:3001/health |
 
 ---
 
-## ❓ Problem?
+## Extension (optional)
 
-| Error | Fix |
-|-------|-----|
-| `npm: command not found` | `bash scripts/install-local.sh` dubara chalao |
-| `password mang raha` | `sudo` mat use karo — ZIP download karo |
-| API key error | OpenAI key sahi paste karo Settings mein |
-| ⚡ button nahi dikh raha | TradingView page refresh karo |
+Chrome → `chrome://extensions` → Load unpacked → `extension` folder
+
+Agar onboarding buttons kaam na karein — **app.html use karo**, woh 100% kaam karega.
 
 ---
 
-## 📁 Important Files
-
-| File | Kya hai |
-|------|---------|
-| `extension/` | Chrome mein load karna hai |
-| `dist/*.zip` | Chrome Store upload ke liye |
-| `backend/` | Server (npm run dev) |
-| `docs/LAUNCH_CHECKLIST.md` | Sell karne ki guide |
-
----
-
-**Bottom line: ZIP download → install script → backend start → extension load → API key → test. Bas!**
+**Support:** GitHub Issues — https://github.com/Janhavi12800/ClipMInd-AI-extension/issues

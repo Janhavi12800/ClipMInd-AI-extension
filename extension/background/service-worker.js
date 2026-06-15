@@ -12,12 +12,11 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 
   if (details.reason === 'install') {
     chrome.storage.local.set({
-      tp_onboardingComplete: false,
+      tp_onboardingComplete: true,
       tp_market: 'india',
       tp_riskPercent: 1,
       tp_capital: 100000
     });
-    chrome.tabs.create({ url: chrome.runtime.getURL('onboarding/onboarding.html') });
   }
 
   chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false });

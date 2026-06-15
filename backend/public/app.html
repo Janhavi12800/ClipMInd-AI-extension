@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TradePrompt AI — Web App</title>
+  <style>
+    :root{--p:#6366f1;--bg:#0f172a;--card:#1e293b;--text:#f1f5f9;--muted:#94a3b8;--border:#334155;--ok:#10b981}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+    .header{background:linear-gradient(135deg,var(--p),#8b5cf6);padding:20px 24px;display:flex;align-items:center;gap:12px}
+    .header h1{font-size:20px}
+    .badge{margin-left:auto;background:rgba(255,255,255,.2);padding:4px 10px;border-radius:20px;font-size:12px}
+    .wrap{max-width:900px;margin:0 auto;padding:20px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px}
+    .title{font-size:11px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;font-weight:600;letter-spacing:.5px}
+    .tabs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+    .tab{padding:10px;text-align:center;border-radius:8px;background:#334155;cursor:pointer;font-size:13px;font-weight:600;border:1px solid var(--border)}
+    .tab.on{background:var(--p);border-color:var(--p)}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    input,select{width:100%;padding:10px;background:#334155;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px}
+    .tpl{display:flex;gap:10px;padding:12px;background:#334155;border-radius:8px;margin-bottom:8px;cursor:pointer;border:1px solid var(--border)}
+    .tpl:hover{border-color:var(--p)}
+    .btn{width:100%;padding:12px;border:none;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;margin-top:8px}
+    .btn-p{background:linear-gradient(135deg,var(--p),#8b5cf6);color:#fff}
+    .btn-s{background:#334155;color:var(--text);border:1px solid var(--border)}
+    .out{background:#0a0f1e;border:1px solid var(--border);border-radius:10px;padding:16px;font-size:13px;line-height:1.7;white-space:pre-wrap;min-height:120px;max-height:400px;overflow-y:auto}
+    .row{display:flex;gap:8px;margin-top:8px}
+    .row .btn{flex:1;margin:0}
+    .ok{color:var(--ok);font-size:13px;margin-top:8px}
+    .warn{background:rgba(245,158,11,.1);border:1px solid #f59e0b;border-radius:8px;padding:12px;font-size:13px;margin-bottom:16px}
+    a{color:var(--p)}
+  </style>
+</head>
+<body>
+<div class="header">
+  <span style="font-size:28px">⚡</span>
+  <h1>TradePrompt AI</h1>
+  <span class="badge">Web App — No Extension Needed</span>
+</div>
+
+<div class="wrap">
+  <div class="warn">
+    ⚠️ Educational only. Not financial advice. 
+    <a href="https://www.tradingview.com/chart/" target="_blank">TradingView</a> chart kholo, analysis yahan karo.
+  </div>
+
+  <div class="card" id="keyCard">
+    <div class="title">Step 1 — OpenAI API Key (ek baar)</div>
+    <input type="password" id="apiKey" placeholder="sk-proj-... (platform.openai.com/api-keys)">
+    <button class="btn btn-p" onclick="saveKey()">💾 Save API Key</button>
+    <div class="ok" id="keyStatus"></div>
+  </div>
+
+  <div class="card">
+    <div class="title">Step 2 — Market & Symbol</div>
+    <div class="tabs" id="markets">
+      <div class="tab on" data-m="india">🇮🇳 India</div>
+      <div class="tab" data-m="forex">💱 Forex</div>
+      <div class="tab" data-m="crypto">₿ Crypto</div>
+    </div>
+    <div class="grid2" style="margin-top:12px">
+      <div><div class="title">Symbol</div><input id="symbol" value="RELIANCE"></div>
+      <div><div class="title">Timeframe</div>
+        <select id="tf"><option>1m</option><option>5m</option><option selected>15m</option><option>1h</option><option>4h</option><option>1D</option></select>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="title">Step 3 — Template Select Karo</div>
+    <div id="templates"></div>
+  </div>
+
+  <div class="card">
+    <div class="title">Output</div>
+    <div class="out" id="output">Template select karo ya neeche button dabao...</div>
+    <div class="row">
+      <button class="btn btn-s" onclick="copyOut()">📋 Copy</button>
+      <button class="btn btn-p" onclick="runAI()">🤖 AI Analysis Chalao</button>
+    </div>
+    <div class="ok" id="aiStatus"></div>
+  </div>
+</div>
+
+<script>
+const TPL={
+india:[
+{id:'ta',n:'📊 NSE/BSE Technical Analysis',t:`Analyze {symbol} on {tf} for Indian market (NSE/BSE).\n\nIST Time: {time}\nMarket: {status}\n\nProvide: Trend, Support/Resistance, Entry, SL, Targets, R:R, Confidence 1-10.\nInclude Indian market context: STT, session timing, FII/DII if relevant.\nCapital: ₹1,00,000 | Risk: 1% per trade.`},
+{id:'intra',n:'🎯 Intraday Setup',t:`Intraday setup for {symbol} on {tf}. IST: {time}. Session: {session}.\n\nScan: ORB, VWAP, prev day H/L, volume spike.\nSquare off before 3:20 PM. Risk 1%. Give LONG/SHORT/NO TRADE.`},
+{id:'fno',n:'📈 F&O Options Analysis',t:`F&O analysis for {symbol} on NSE. Timeframe: {tf}.\n\nAnalyze: Futures premium, Max Pain, PCR, OI buildup, IV, expiry week behavior.\nGive directional or neutral strategy with strikes.`},
+{id:'swing',n:'🔄 Swing Trade',t:`Swing trade analysis for {symbol} on {tf}. Hold 3-15 days.\nMulti-TF alignment, patterns, Fibonacci, delivery volume.\nEntry, SL, T1, T2, T3 for ₹1L capital.`}
+],
+forex:[
+{id:'ta',n:'📊 Forex Technical Analysis',t:`Analyze {symbol} on {tf}. Session: {session}. UTC: {utc}.\nSupport/resistance, RSI, MACD, ATR stops. Bias, Entry, SL, TP1-3 in pips.`},
+{id:'sess',n:'⚡ Session Strategy',t:`Session plan for {symbol}. Active: {session}.\nAsian range, London breakout, NY reversal. Risk 1%.`},
+{id:'usdinr',n:'🇮🇳 USD/INR (RBI)',t:`USD/INR analysis for Indian regulated context. NSE CDS setup if applicable.\nRBI zones, FII flow, crude oil impact.`}
+],
+crypto:[
+{id:'ta',n:'📊 Crypto Technical Analysis',t:`Analyze {symbol} on {tf}. Fear&Greed: {fg}.\nTrend, S/R, RSI, MACD, funding rate. Entry, SL, targets.\nNote: 30% tax + 1% TDS in India.`},
+{id:'btc',n:'🌐 BTC Dominance',t:`BTC dominance analysis and altcoin implications. Current trend and allocation strategy.`},
+{id:'tax',n:'💰 Tax-Aware Trade',t:`{symbol} trade on {tf} with Indian 30% crypto tax factored in.\nOnly recommend if net R:R after tax > 1:2.`}
+]};
+
+let market='india';
+
+function ist(){return new Date().toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})}
+function mstatus(){const n=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Kolkata'}));const d=n.getDay(),t=n.getHours()*60+n.getMinutes();if(d===0||d===6)return'CLOSED';if(t>=555&&t<570)return'PRE-OPEN';if(t>=570&&t<930)return'OPEN';return'CLOSED'}
+function session(){const h=new Date().getUTCHours();if(h>=13&&h<17)return'London-NY Overlap';if(h>=8&&h<13)return'London';if(h>=13&&h<22)return'New York';return'Asian'}
+function fill(t){return t.replace('{symbol}',document.getElementById('symbol').value).replace('{tf}',document.getElementById('tf').value).replace('{time}',ist()).replace('{status}',mstatus()).replace('{session}',session()).replace('{utc}',new Date().toUTCString()).replace('{fg}','check alternative.me')}
+
+function renderTpl(){
+  document.getElementById('templates').innerHTML=TPL[market].map((x,i)=>`<div class="tpl" onclick="pick(${i})"><span>${x.n}</span></div>`).join('');
+}
+function pick(i){document.getElementById('output').textContent=fill(TPL[market][i].t);window._prompt=fill(TPL[market][i].t)}
+
+document.getElementById('markets').onclick=e=>{
+  const t=e.target.closest('.tab');if(!t)return;
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+  t.classList.add('on');market=t.dataset.m;
+  const defs={india:'RELIANCE',forex:'EUR/USD',crypto:'BTC/USDT'};
+  document.getElementById('symbol').value=defs[market];renderTpl();
+};
+
+function saveKey(){
+  const k=document.getElementById('apiKey').value.trim();
+  if(!k.startsWith('sk-')){document.getElementById('keyStatus').textContent='❌ Valid key daalo (sk-...)';return}
+  localStorage.setItem('tp_key',k);
+  document.getElementById('keyStatus').textContent='✅ API key saved!';
+}
+
+function copyOut(){navigator.clipboard.writeText(document.getElementById('output').textContent);document.getElementById('aiStatus').textContent='✅ Copied!'}
+
+async function runAI(){
+  const key=localStorage.getItem('tp_key')||document.getElementById('apiKey').value.trim();
+  if(!key){document.getElementById('aiStatus').textContent='❌ Pehle API key save karo';return}
+  const prompt=window._prompt||document.getElementById('output').textContent;
+  document.getElementById('aiStatus').textContent='⏳ AI analyze kar raha hai...';
+  document.getElementById('output').textContent='Analyzing...';
+  try{
+    const res=await fetch('https://api.openai.com/v1/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+      body:JSON.stringify({model:'gpt-4o-mini',messages:[
+        {role:'system',content:'You are TradePrompt AI, expert Indian/Forex/Crypto trading analyst. Educational only.'},
+        {role:'user',content:prompt}
+      ],max_tokens:2000,temperature:0.3})
+    });
+    const data=await res.json();
+    if(data.error)throw new Error(data.error.message);
+    document.getElementById('output').textContent=data.choices[0].message.content;
+    document.getElementById('aiStatus').textContent='✅ Analysis complete!';
+  }catch(e){document.getElementById('output').textContent='Error: '+e.message;document.getElementById('aiStatus').textContent='❌ '+e.message}
+}
+
+// init
+if(localStorage.getItem('tp_key')){document.getElementById('apiKey').value=localStorage.getItem('tp_key');document.getElementById('keyStatus').textContent='✅ API key loaded';}
+renderTpl();
+</script>
+</body>
+</html>
