@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TechShield AI</title>
+  <link rel="stylesheet" href="../ui/shared.css" />
+  <link rel="stylesheet" href="./popup.css" />
+</head>
+<body>
+  <div id="app" class="popup">
+    <header class="popup-header">
+      <div class="brand">
+        <span class="brand-icon">🛡️</span>
+        <div>
+          <strong>TechShield AI</strong>
+          <span class="version">v1.0</span>
+        </div>
+      </div>
+      <button id="btn-theme" class="btn-icon btn-secondary" aria-label="Toggle theme">🌙</button>
+    </header>
+
+    <div id="tab-context" class="tab-context card">
+      <p class="tab-url" id="current-url">Loading...</p>
+      <p class="tab-title" id="current-title"></p>
+    </div>
+
+    <div class="scores">
+      <div class="score-card card" id="security-score">
+        <span class="score-value" id="sec-score-val">—</span>
+        <span class="score-label">Security</span>
+      </div>
+      <div class="score-card card" id="seo-score">
+        <span class="score-value" id="seo-score-val">—</span>
+        <span class="score-label">SEO</span>
+      </div>
+      <div class="score-card card" id="phishing-score">
+        <span class="score-value" id="phish-score-val">—</span>
+        <span class="score-label">Phishing</span>
+      </div>
+    </div>
+
+    <div id="alert-banner" class="alert-banner" hidden role="alert"></div>
+
+    <nav class="quick-nav" aria-label="Quick navigation">
+      <button class="quick-btn" data-action="security">🔒 Security</button>
+      <button class="quick-btn" data-action="seo">🔍 SEO</button>
+      <button class="quick-btn" data-action="prompts">✨ Prompts</button>
+      <button class="quick-btn" data-action="tech">⚙️ Tech</button>
+      <button class="quick-btn" data-action="notes">📝 Notes</button>
+    </nav>
+
+    <footer class="popup-footer">
+      <button id="btn-sidepanel" class="btn-primary" style="width:100%">Open Full Panel</button>
+      <button id="btn-options" class="btn-secondary btn-sm" style="width:100%;margin-top:6px">Settings</button>
+    </footer>
+  </div>
+  <script type="module" src="./popup.ts"></script>
+</body>
+</html>

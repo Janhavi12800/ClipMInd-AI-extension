@@ -1,0 +1,57 @@
+version: '3.9'
+
+services:
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:54321/functions/v1}
+        VITE_PAYMENTS_URL: ${VITE_PAYMENTS_URL:-http://localhost:54321/functions/v1}
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
+    ports:
+      - '3000:80'
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  prometheus:
+    image: prom/prometheus:v2.54.0
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - '9090:9090'
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - '3001:3000'
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:3.2.0
+    ports:
+      - '3100:3100'
+    volumes:
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    restart: unless-stopped
+
+volumes:
+  prometheus_data:
+  grafana_data:
+  loki_data:

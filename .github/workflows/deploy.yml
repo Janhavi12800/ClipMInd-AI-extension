@@ -1,0 +1,125 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+jobs:
+  deploy-supabase:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'staging' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link Supabase project
+        run: supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Run migrations
+        run: supabase db push
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+
+      - name: Deploy Edge Functions
+        run: |
+          supabase functions deploy api --no-verify-jwt
+          supabase functions deploy auth-session
+          supabase functions deploy payments --no-verify-jwt
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Set function secrets
+        run: |
+          supabase secrets set \
+            STRIPE_SECRET_KEY="${{ secrets.STRIPE_SECRET_KEY }}" \
+            STRIPE_WEBHOOK_SECRET="${{ secrets.STRIPE_WEBHOOK_SECRET }}" \
+            RAZORPAY_KEY_ID="${{ secrets.RAZORPAY_KEY_ID }}" \
+            RAZORPAY_KEY_SECRET="${{ secrets.RAZORPAY_KEY_SECRET }}" \
+            RAZORPAY_WEBHOOK_SECRET="${{ secrets.RAZORPAY_WEBHOOK_SECRET }}" \
+            IP_HASH_SALT="${{ secrets.IP_HASH_SALT }}" \
+            ENCRYPTION_KEY="${{ secrets.ENCRYPTION_KEY }}"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    needs: deploy-supabase
+    environment: ${{ github.event.inputs.environment || 'staging' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        if: vars.DEPLOY_TARGET == 'aws'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Build and push Docker image
+        run: |
+          docker build \
+            --build-arg VITE_API_URL="${{ vars.VITE_API_URL }}" \
+            --build-arg VITE_PAYMENTS_URL="${{ vars.VITE_PAYMENTS_URL }}" \
+            --build-arg VITE_SUPABASE_URL="${{ vars.VITE_SUPABASE_URL }}" \
+            --build-arg VITE_SUPABASE_ANON_KEY="${{ vars.VITE_SUPABASE_ANON_KEY }}" \
+            -t techshield-frontend:${{ github.sha }} \
+            -f docker/Dockerfile .
+          docker tag techshield-frontend:${{ github.sha }} ${{ vars.ECR_REGISTRY }}/techshield-frontend:latest
+          docker push ${{ vars.ECR_REGISTRY }}/techshield-frontend:latest
+
+      - name: Deploy to ECS
+        if: vars.DEPLOY_TARGET == 'aws'
+        run: |
+          aws ecs update-service \
+            --cluster ${{ vars.ECS_CLUSTER }} \
+            --service techshield-frontend \
+            --force-new-deployment
+
+  deploy-extension:
+    runs-on: ubuntu-latest
+    needs: lint
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build extension
+        run: cd extension && npm ci && npm run build
+
+      - name: Package extension
+        run: cd extension/dist && zip -r ../../techshield-extension.zip .
+
+      - name: Upload extension artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: chrome-extension
+          path: techshield-extension.zip
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: cd extension && npm ci && npm run build

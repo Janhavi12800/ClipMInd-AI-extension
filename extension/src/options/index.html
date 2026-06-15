@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TechShield AI — Settings</title>
+  <link rel="stylesheet" href="../ui/shared.css" />
+  <link rel="stylesheet" href="./options.css" />
+</head>
+<body>
+  <div class="options-container">
+    <header class="options-header">
+      <h1>🛡️ TechShield AI Settings</h1>
+      <p>Configure your extension preferences and security options</p>
+    </header>
+
+    <section class="card settings-section">
+      <h2>Appearance</h2>
+      <div class="form-group">
+        <label for="theme">Theme</label>
+        <select id="theme">
+          <option value="system">System</option>
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </select>
+      </div>
+    </section>
+
+    <section class="card settings-section">
+      <h2>Security</h2>
+      <div class="form-group">
+        <label for="phishing-sensitivity">Phishing Detection Sensitivity</label>
+        <select id="phishing-sensitivity">
+          <option value="low">Low — Fewer warnings</option>
+          <option value="medium">Medium — Balanced (recommended)</option>
+          <option value="high">High — Maximum protection</option>
+        </select>
+      </div>
+      <div class="setting-row">
+        <div>
+          <strong>Auto-Scan Pages</strong>
+          <p>Automatically analyze security when visiting new pages</p>
+        </div>
+        <label class="toggle"><input type="checkbox" id="auto-scan" /><span class="slider"></span></label>
+      </div>
+      <div class="setting-row">
+        <div>
+          <strong>Security Alerts</strong>
+          <p>Show notifications for detected threats</p>
+        </div>
+        <label class="toggle"><input type="checkbox" id="security-alerts" /><span class="slider"></span></label>
+      </div>
+      <div class="setting-row">
+        <div>
+          <strong>PII Redaction</strong>
+          <p>Detect and redact personal information in AI prompts</p>
+        </div>
+        <label class="toggle"><input type="checkbox" id="pii-redaction" /><span class="slider"></span></label>
+      </div>
+    </section>
+
+    <section class="card settings-section">
+      <h2>API Connection</h2>
+      <div class="form-group">
+        <label for="api-url">Supabase API Base URL</label>
+        <input type="url" id="api-url" placeholder="https://your-project.supabase.co" />
+        <p class="hint">Optional: Connect to TechShield AI cloud backend for sync</p>
+      </div>
+      <div class="setting-row">
+        <div>
+          <strong>Cloud Sync</strong>
+          <p>Sync prompts, notes, and scans with your account</p>
+        </div>
+        <label class="toggle"><input type="checkbox" id="sync-enabled" /><span class="slider"></span></label>
+      </div>
+    </section>
+
+    <section class="card settings-section">
+      <h2>About</h2>
+      <p>TechShield AI v1.0.0</p>
+      <p style="margin-top:4px;color:var(--text-muted)">Enterprise AI-powered security, SEO, and productivity</p>
+    </section>
+
+    <div class="actions" style="margin-top:16px">
+      <button class="btn-primary" id="btn-save">Save Settings</button>
+      <button class="btn-secondary" id="btn-reset">Reset to Defaults</button>
+      <span id="save-status" class="save-status"></span>
+    </div>
+  </div>
+  <script type="module" src="./options.ts"></script>
+</body>
+</html>
