@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "TradePrompt AI — Smart Trading Prompts",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Professional AI prompt engineering for Indian stocks (NSE/BSE), Forex & Crypto. 1-click chart analysis with vision AI.",
   "permissions": [
     "storage",
@@ -22,6 +22,7 @@
     "https://api.tradeprompt.ai/*",
     "https://query1.finance.yahoo.com/*",
     "https://query2.finance.yahoo.com/*",
+    "https://api.frankfurter.app/*",
     "http://localhost:3001/*"
   ],
   "externally_connectable": {

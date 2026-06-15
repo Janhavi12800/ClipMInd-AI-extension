@@ -81,12 +81,16 @@ STRATEGY: Breakout if close outside ${range} with volume | Fade if rejection at 
     crypto: '• 24/7 market | Watch BTC correlation\n• India: 30% tax + 1% TDS on gains'
   };
 
+  const changeStr = String(change || 'N/A');
+  const bias = changeStr.includes('-') ? 'Bearish lean'
+    : changeStr.includes('+') || (parseFloat(changeStr) > 0) ? 'Bullish lean' : 'Neutral';
+
   return `📊 TECHNICAL ANALYSIS — ${symbol} (${timeframe})
 🕐 IST: ${ist} | Market: ${marketLabel}
-💰 Spot: ${spotStr} | Change: ${change}
+💰 Spot: ${spotStr} | Change: ${changeStr}
 📏 ATR: ${atr || levels?.atr || 'N/A'} | Range: ${range}
 
-📈 BIAS: ${change.includes('-') ? 'Bearish lean' : change.includes('+') || (parseFloat(change) > 0) ? 'Bullish lean' : 'Neutral'} — confirm on chart
+📈 BIAS: ${bias} — confirm on chart
 
 🎯 LEVELS:
 ${sLine}

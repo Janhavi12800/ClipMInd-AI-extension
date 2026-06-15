@@ -104,11 +104,16 @@ async function handleMessage(message, sender) {
       await chrome.sidePanel.open({ windowId: sender.tab?.windowId });
       return { success: true };
 
-    case 'CAPTURE_CHART':
+    case 'CAPTURE_CHART': {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (!tab?.id) throw new Error('No active tab');
-      const dataUrl = await chrome.tabs.captureVisibleTab(null, { format: 'png', quality: 90 });
-      return { screenshot: dataUrl };
+      if (!tab?.id) return { screenshot: null, fallback: true };
+      try {
+        const dataUrl = await chrome.tabs.captureVisibleTab(null, { format: 'png', quality: 90 });
+        return { screenshot: dataUrl };
+      } catch {
+        return { screenshot: null, fallback: true };
+      }
+    }
 
     case 'GET_CHART_CONTEXT':
       const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -141,7 +146,7 @@ async function handleMessage(message, sender) {
       return { success: true };
 
     default:
-      throw new Error(`Unknown message type: ${message.type}`);
+      return { success: false, message: `Unknown: ${message.type}` };
   }
 }
 

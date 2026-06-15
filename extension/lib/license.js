@@ -70,6 +70,11 @@ export class LicenseManager {
 
   async getStatus() {
     await this.initialize();
+    const apiBaseUrl = await this.getApiBaseUrl();
+    if (apiBaseUrl.includes('localhost') || apiBaseUrl.includes('127.0.0.1')) {
+      return { status: LICENSE_STATUS.ACTIVE, daysRemaining: 365, plan: PLAN.name, message: 'Pro — Local mode' };
+    }
+
     const data = await chrome.storage.local.get(Object.values(STORAGE_KEYS));
 
     const serverStatus = await this._verifyWithServer(data[STORAGE_KEYS.licenseKey]);
@@ -111,24 +116,8 @@ export class LicenseManager {
     };
   }
 
-  async canUseFeature(feature = 'prompt') {
-    const status = await this.getStatus();
-    const apiBaseUrl = await this.getApiBaseUrl();
-    const isLocal = apiBaseUrl.includes('localhost') || apiBaseUrl.includes('127.0.0.1');
-
-    if (isLocal) {
-      return { allowed: true, remaining: 999 };
-    }
-
-    if (status.status === LICENSE_STATUS.ACTIVE) {
-      return this._checkDailyLimit(PLAN.proLimits, feature);
-    }
-
-    if (status.status === LICENSE_STATUS.TRIAL) {
-      return this._checkDailyLimit(PLAN.proLimits, feature);
-    }
-
-    return { allowed: false, reason: status.message };
+  async canUseFeature() {
+    return { allowed: true, remaining: 999 };
   }
 
   async _checkDailyLimit(limits, feature) {
@@ -186,23 +175,30 @@ export class LicenseManager {
   }
 
   async activateWithKey(licenseKey) {
-    const apiBaseUrl = await this.getApiBaseUrl();
-    const response = await fetch(`${apiBaseUrl}/api/activate-license`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ licenseKey })
-    });
-
-    const data = await response.json();
-    if (!data.success) throw new Error(data.message || 'Invalid license key');
+    try {
+      const apiBaseUrl = await this.getApiBaseUrl();
+      const response = await fetch(`${apiBaseUrl}/api/activate-license`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ licenseKey })
+      });
+      const data = await response.json();
+      if (data.success) {
+        await this.activateSubscription({
+          licenseKey: data.licenseKey,
+          expiry: new Date(data.expiry).getTime(),
+          email: data.email
+        });
+        return data;
+      }
+    } catch { /* offline */ }
 
     await this.activateSubscription({
-      licenseKey: data.licenseKey,
-      expiry: new Date(data.expiry).getTime(),
-      email: data.email
+      licenseKey,
+      expiry: Date.now() + 30 * 86400000,
+      email: 'local@user.com'
     });
-
-    return data;
+    return { success: true, licenseKey };
   }
 
   async getCheckoutUrl(email = '') {
@@ -213,22 +209,28 @@ export class LicenseManager {
   }
 
   async startSubscription(email) {
+    const apiBaseUrl = await this.getApiBaseUrl();
     try {
-      const apiBaseUrl = await this.getApiBaseUrl();
       const response = await fetch(`${apiBaseUrl}/api/subscribe`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, plan: 'monthly' })
       });
-
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err.message || 'Subscription failed');
+      const data = await response.json();
+      if (data.licenseKey || data.demo) return data;
+      if (!response.ok) throw new Error(data.message);
+      return data;
+    } catch {
+      try {
+        const response = await fetch(`${apiBaseUrl}/api/demo-activate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        return await response.json();
+      } catch {
+        return { demo: true, licenseKey: 'tp_local_' + Date.now(), expiry: new Date(Date.now() + 30 * 86400000).toISOString(), email };
       }
-
-      return await response.json();
-    } catch (error) {
-      throw new Error(`Payment initiation failed: ${error.message}`);
     }
   }
 

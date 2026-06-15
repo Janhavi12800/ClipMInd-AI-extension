@@ -1,109 +1,78 @@
 #!/bin/bash
-# ═══════════════════════════════════════════════════════════════
-#  TradePrompt AI — EK COMMAND, SAB KUCH AUTO
-#  Run: bash START_ALL.sh
-# ═══════════════════════════════════════════════════════════════
+# TradePrompt AI — EK COMMAND, SAB KUCH AUTO (zero errors)
+# Run: bash START_ALL.sh
 
-set -e
 BASE="https://raw.githubusercontent.com/Janhavi12800/ClipMInd-AI-extension/main"
 
-# Auto-detect project folder
 for DIR in \
   "/home/blocksone/ClipMInd-AI-extension/ClipMInd-AI-extension-main" \
   "$HOME/ClipMInd-AI-extension/ClipMInd-AI-extension-main" \
   "$HOME/ClipMInd-AI-extension" \
   "$(cd "$(dirname "$0")" 2>/dev/null && pwd)" \
   "$(pwd)"; do
-  if [ -f "$DIR/backend/package.json" ]; then
-    PROJECT="$DIR"
-    break
-  fi
+  [ -f "$DIR/backend/package.json" ] && PROJECT="$DIR" && break
 done
 
 if [ -z "$PROJECT" ]; then
-  echo "📥 Project download ho raha hai..."
   PROJECT="$HOME/ClipMInd-AI-extension"
-  git clone --depth 1 https://github.com/Janhavi12800/ClipMInd-AI-extension.git "$PROJECT" 2>/dev/null || {
-    mkdir -p "$PROJECT"
-    curl -fsSL "$BASE/backend/package.json" -o /tmp/tp-check.json 2>/dev/null
-  }
+  git clone --depth 1 https://github.com/Janhavi12800/ClipMInd-AI-extension.git "$PROJECT" 2>/dev/null || true
 fi
 
-cd "$PROJECT"
+cd "$PROJECT" || exit 1
 echo ""
 echo "⚡ TradePrompt AI — Auto Start"
-echo "=============================="
-echo "📁 Folder: $PROJECT"
+echo "📁 $PROJECT"
 echo ""
 
-# Download latest critical files (works even without git)
-echo "📥 Latest code sync..."
-mkdir -p backend/src backend/public extension/lib extension/background extension/sidepanel extension/content
-for f in \
-  backend/src/server.js \
-  backend/src/ai-service.js \
-  backend/src/smart-analysis.js \
-  backend/public/app.html \
-  backend/public/checkout.html \
-  extension/lib/ai-client.js \
-  extension/lib/license.js \
-  extension/lib/market-data.js \
-  extension/background/service-worker.js \
-  extension/sidepanel/sidepanel.js \
-  extension/manifest.json; do
+echo "📥 Syncing latest code..."
+mkdir -p backend/src backend/public extension/lib extension/background extension/sidepanel extension/assets/icons
+FILES=(
+  backend/src/server.js backend/src/ai-service.js backend/src/smart-analysis.js backend/src/market-data.js
+  backend/public/app.html backend/public/checkout.html
+  extension/lib/ai-client.js extension/lib/license.js extension/lib/market-data.js extension/lib/messaging.js
+  extension/background/service-worker.js extension/sidepanel/sidepanel.js extension/popup/popup.js extension/options/options.js
+  extension/manifest.json START_ALL.sh
+)
+for f in "${FILES[@]}"; do
   curl -fsSL "$BASE/$f" -o "$f" 2>/dev/null || true
 done
 
-# Fix extension manifest
-sed -i '/default_locale/d' extension/manifest.json 2>/dev/null || true
-grep -q '"tabs"' extension/manifest.json 2>/dev/null || \
-  sed -i 's/"scripting"/"scripting",\n    "tabs"/' extension/manifest.json 2>/dev/null || true
+python3 -c "
+from PIL import Image, ImageDraw
+import os
+d='extension/assets/icons'; os.makedirs(d, exist_ok=True)
+for s in [16,32,48,128]:
+ img=Image.new('RGBA',(s,s),(99,102,241,255))
+ ImageDraw.Draw(img).polygon([(s//2,s//8),(s*3//4,s//2),(s//2,s*7//8)],fill=(250,204,21,255))
+ img.save(f'{d}/icon{s}.png')
+" 2>/dev/null || true
 
-# Backend setup
-echo "📦 Backend install..."
+sed -i '/default_locale/d' extension/manifest.json 2>/dev/null || true
+
 cd backend
 npm install --silent 2>/dev/null || npm install
-
-# Force demo .env
-if [ ! -f .env ]; then
-  npm run setup:demo
-fi
+[ ! -f .env ] && npm run setup:demo
 touch .env
 grep -q '^DEMO_MODE=' .env && sed -i 's/^DEMO_MODE=.*/DEMO_MODE=true/' .env || echo 'DEMO_MODE=true' >> .env
-grep -q '^OPENAI_API_KEY=' .env || echo 'OPENAI_API_KEY=' >> .env
 
-# Kill old process
-echo "🛑 Purana backend band..."
 fuser -k 3001/tcp 2>/dev/null || lsof -ti:3001 | xargs kill -9 2>/dev/null || true
 sleep 1
-
-# Start backend in background
-echo "🚀 Backend start..."
 nohup npm run dev > /tmp/tradeprompt.log 2>&1 &
-sleep 3
 
-# Test backend
-if curl -sf http://localhost:3001/api/health > /dev/null; then
-  echo "✅ Backend chal raha hai!"
-else
-  echo "⚠️  Backend slow start — 5 sec wait..."
-  sleep 5
-fi
+for i in 1 2 3 4 5 6 7 8 9 10; do
+  curl -sf http://localhost:3001/api/health >/dev/null && OK=1 && break
+  sleep 1
+done
 
-# Open browser
 URL="http://localhost:3001/app.html"
 echo ""
-echo "╔══════════════════════════════════════════════════╗"
-echo "║           ✅ SAB TAYYAR — KOI ERROR NAHI           ║"
-echo "╚══════════════════════════════════════════════════╝"
+if [ "$OK" = "1" ]; then
+  echo "✅ Backend ready — koi error nahi"
+else
+  echo "⚠️  Backend starting... open: $URL"
+fi
 echo ""
-echo "  🌐 App:      $URL"
-echo "  💳 Checkout: http://localhost:3001/checkout.html"
+echo "  🌐 $URL"
+echo "  Extension: chrome://extensions → Reload"
 echo ""
-echo "  Extension (optional):"
-echo "    chrome://extensions → Reload TradePrompt AI"
-echo ""
-echo "  TradingView: https://www.tradingview.com/chart/"
-echo ""
-
-xdg-open "$URL" 2>/dev/null || sensible-browser "$URL" 2>/dev/null || echo "Browser mein kholo: $URL"
+xdg-open "$URL" 2>/dev/null || sensible-browser "$URL" 2>/dev/null || true

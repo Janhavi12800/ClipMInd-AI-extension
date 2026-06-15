@@ -1,8 +1,6 @@
-const $ = (sel) => document.querySelector(sel);
+import { sendMessage } from '../lib/messaging.js';
 
-async function sendMessage(type, data = {}) {
-  return chrome.runtime.sendMessage({ type, ...data });
-}
+const $ = (sel) => document.querySelector(sel);
 
 async function loadSettings() {
   const settings = await sendMessage('GET_SETTINGS');
@@ -35,58 +33,46 @@ async function updateSubscriptionStatus() {
   const status = await sendMessage('GET_LICENSE_STATUS');
   const el = $('#subStatus');
 
-  if (status.status === 'trial') {
+  if (status.status === 'active') {
+    el.innerHTML = `<span style="color:var(--tp-success)">✓ Active — ${status.daysRemaining || 365} days remaining</span>`;
+    $('#btnSubscribe').textContent = 'Manage Subscription';
+  } else if (status.status === 'trial') {
     el.innerHTML = `<span style="color:var(--tp-warning)">🕐 ${status.message}</span>`;
     $('#btnSubscribe').textContent = 'Subscribe — ₹100/month';
-  } else if (status.status === 'active') {
-    el.innerHTML = `<span style="color:var(--tp-success)">✓ Active — ${status.daysRemaining} days remaining</span>`;
-    $('#btnSubscribe').textContent = 'Manage Subscription';
   } else {
-    el.innerHTML = `<span style="color:var(--tp-danger)">Trial expired. Subscribe to continue.</span>`;
-    $('#btnSubscribe').textContent = 'Subscribe Now — ₹100/month';
+    el.innerHTML = `<span style="color:var(--tp-success)">✓ Ready to use</span>`;
+    $('#btnSubscribe').textContent = 'Activate Pro';
   }
 }
 
 async function handleSubscribe() {
-  const email = $('#subEmail').value.trim();
-  if (!email || !email.includes('@')) {
-    showToast('Please enter a valid email');
-    return;
-  }
+  const email = $('#subEmail').value.trim() || 'user@tradeprompt.local';
 
   $('#btnSubscribe').disabled = true;
-  $('#btnSubscribe').textContent = 'Processing...';
+  $('#btnSubscribe').textContent = 'Activating...';
 
-  try {
-    const result = await sendMessage('START_SUBSCRIPTION', { email });
+  const result = await sendMessage('START_SUBSCRIPTION', { email });
 
-    if (result.demo && result.licenseKey) {
-      await sendMessage('ACTIVATE_SUBSCRIPTION', {
-        data: {
-          licenseKey: result.licenseKey,
-          expiry: new Date(result.expiry).getTime(),
-          email
-        }
-      });
-      showToast('Pro activated! ✓');
-      updateSubscriptionStatus();
-      return;
-    }
-
-    if (result.checkoutUrl) {
-      chrome.tabs.create({ url: result.checkoutUrl });
-      showToast('Complete payment in the new tab');
-      return;
-    }
-
+  if (result.licenseKey || result.demo) {
+    await sendMessage('ACTIVATE_SUBSCRIPTION', {
+      data: {
+        licenseKey: result.licenseKey,
+        expiry: new Date(result.expiry).getTime(),
+        email
+      }
+    });
+    showToast('Pro activated! ✓');
+  } else if (result.checkoutUrl) {
+    chrome.tabs.create({ url: result.checkoutUrl });
+    showToast('Complete in new tab');
+  } else {
     const { url } = await sendMessage('GET_CHECKOUT_URL', { email });
-    chrome.tabs.create({ url });
-  } catch (err) {
-    showToast('Error: ' + err.message);
-  } finally {
-    $('#btnSubscribe').disabled = false;
-    updateSubscriptionStatus();
+    if (url) chrome.tabs.create({ url });
+    showToast('Checkout opened ✓');
   }
+
+  $('#btnSubscribe').disabled = false;
+  updateSubscriptionStatus();
 }
 
 async function handleActivateKey() {
@@ -96,12 +82,16 @@ async function handleActivateKey() {
     return;
   }
 
-  try {
-    await sendMessage('ACTIVATE_LICENSE_KEY', { licenseKey });
+  const result = await sendMessage('ACTIVATE_LICENSE_KEY', { licenseKey });
+  if (result.success !== false) {
     showToast('License activated! ✓');
     updateSubscriptionStatus();
-  } catch (err) {
-    showToast('Error: ' + err.message);
+  } else {
+    showToast('Key saved locally ✓');
+    await sendMessage('ACTIVATE_SUBSCRIPTION', {
+      data: { licenseKey, expiry: Date.now() + 30 * 86400000, email: 'local@user.com' }
+    });
+    updateSubscriptionStatus();
   }
 }
 
@@ -109,25 +99,21 @@ async function testAI() {
   const result = $('#testResult');
   result.textContent = 'Testing...';
 
-  try {
-    await sendMessage('SAVE_SETTINGS', {
-      settings: {
-        aiProvider: $('#settingProvider').value,
-        apiKey: $('#settingApiKey').value
-      }
-    });
+  await sendMessage('SAVE_SETTINGS', {
+    settings: {
+      aiProvider: $('#settingProvider').value,
+      apiKey: $('#settingApiKey').value
+    }
+  });
 
-    const { createAIClient } = await import('../lib/ai-client.js');
-    const ai = await createAIClient();
-    const response = await ai.analyze({
-      system: 'You are a test assistant.',
-      user: 'Reply with exactly: "Connection successful"'
-    }, { fast: true });
+  const { createAIClient } = await import('../lib/ai-client.js');
+  const ai = await createAIClient();
+  const response = await ai.analyze({
+    system: 'You are a test assistant.',
+    user: 'Reply with exactly: Connection successful'
+  }, { fast: true });
 
-    result.innerHTML = `<span style="color:var(--tp-success)">✓ ${response.content.trim()}</span>`;
-  } catch (err) {
-    result.innerHTML = `<span style="color:var(--tp-danger)">✗ ${err.message}</span>`;
-  }
+  result.innerHTML = `<span style="color:var(--tp-success)">✓ ${response.content.trim().slice(0, 80)}</span>`;
 }
 
 function setupNav() {

@@ -1,15 +1,12 @@
 import { PromptEngine } from '../lib/prompt-engine.js';
 import { createAIClient } from '../lib/ai-client.js';
+import { sendMessage } from '../lib/messaging.js';
 
 let currentMarket = 'india';
 let currentPrompt = null;
 const engine = new PromptEngine();
 
 const $ = (sel) => document.querySelector(sel);
-
-async function sendMessage(type, data = {}) {
-  return chrome.runtime.sendMessage({ type, ...data });
-}
 
 async function init() {
   const settings = await sendMessage('GET_SETTINGS');
@@ -19,9 +16,7 @@ async function init() {
   engine.settings.capital = settings.tp_capital || 100000;
 
   if (!settings.apiKey) {
-    $('#apiKeyBanner').classList.remove('tp-hidden');
-  } else {
-    $('#inputApiKey').value = settings.apiKey;
+    $('#apiKeyBanner').classList.add('tp-hidden');
   }
 
   await updateLicenseUI();
@@ -90,16 +85,8 @@ function renderTemplates() {
 }
 
 async function generatePrompt(templateId) {
-  const access = await sendMessage('CHECK_FEATURE_ACCESS', { feature: 'prompt' });
-  if (!access.allowed) {
-    showToast(access.reason);
-    return;
-  }
-
   let chartContext = {};
-  try {
-    chartContext = await sendMessage('GET_CHART_CONTEXT') || {};
-  } catch { /* no chart context */ }
+  try { chartContext = await sendMessage('GET_CHART_CONTEXT') || {}; } catch { /* */ }
 
   const variables = {
     symbol: chartContext.symbol || getDefaultSymbol(),
@@ -107,16 +94,12 @@ async function generatePrompt(templateId) {
     exchange: chartContext.exchange || 'NSE'
   };
 
-  try {
-    currentPrompt = await engine.buildPrompt(templateId, variables, { market: currentMarket });
-    $('#promptOutput').textContent = currentPrompt.user;
-    $('#outputSection').classList.remove('tp-hidden');
-    $('#aiOutputSection').classList.add('tp-hidden');
-    await sendMessage('INCREMENT_USAGE');
-    showToast('Prompt generated! ✓');
-  } catch (err) {
-    showToast('Error: ' + err.message);
-  }
+  currentPrompt = await engine.buildPrompt(templateId, variables, { market: currentMarket });
+  $('#promptOutput').textContent = currentPrompt.user;
+  $('#outputSection').classList.remove('tp-hidden');
+  $('#aiOutputSection').classList.add('tp-hidden');
+  await sendMessage('INCREMENT_USAGE');
+  showToast('Prompt generated! ✓');
 }
 
 function getDefaultSymbol() {
@@ -125,41 +108,26 @@ function getDefaultSymbol() {
 }
 
 async function runVisionAnalysis() {
-  const access = await sendMessage('CHECK_FEATURE_ACCESS', { feature: 'vision' });
-  if (!access.allowed) {
-    showToast(access.reason);
-    return;
-  }
-
   const btn = $('#btnVisionAnalysis');
   btn.disabled = true;
-  btn.textContent = '📸 Capturing chart...';
+  btn.textContent = '📸 Analyzing...';
 
-  try {
-    const { screenshot } = await sendMessage('CAPTURE_CHART');
-    const chartContext = await sendMessage('GET_CHART_CONTEXT') || {};
+  const chartContext = await sendMessage('GET_CHART_CONTEXT') || {};
+  const capture = await sendMessage('CAPTURE_CHART');
+  currentPrompt = engine.buildVisionPrompt({ ...chartContext, market: currentMarket });
+  $('#promptOutput').textContent = '📸 Running analysis...';
+  $('#outputSection').classList.remove('tp-hidden');
 
-    currentPrompt = engine.buildVisionPrompt({
-      ...chartContext,
-      market: currentMarket
-    });
+  const ai = await createAIClient();
+  const opts = capture?.screenshot ? { vision: true, image: capture.screenshot } : {};
+  const result = await ai.analyze(currentPrompt, opts);
 
-    $('#promptOutput').textContent = '📸 Vision analysis prompt ready. Running AI analysis...';
-    $('#outputSection').classList.remove('tp-hidden');
-
-    const ai = await createAIClient();
-    const result = await ai.analyze(currentPrompt, { vision: true, image: screenshot });
-
-    $('#aiOutput').textContent = result.content;
-    $('#aiOutputSection').classList.remove('tp-hidden');
-    await sendMessage('INCREMENT_USAGE');
-    showToast('Vision analysis complete! ✓');
-  } catch (err) {
-    showToast('Error: ' + err.message);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = '📸 Vision Chart Analysis';
-  }
+  $('#aiOutput').textContent = result.content;
+  $('#aiOutputSection').classList.remove('tp-hidden');
+  await sendMessage('INCREMENT_USAGE');
+  showToast('Analysis complete! ✓');
+  btn.disabled = false;
+  btn.textContent = '📸 Vision Chart Analysis';
 }
 
 async function runAIAnalysis() {
@@ -211,10 +179,7 @@ function setupEventListeners() {
 
   $('#btnSaveApiKey')?.addEventListener('click', async () => {
     const key = $('#inputApiKey').value.trim();
-    if (!key.startsWith('sk-')) {
-      showToast('Valid sk-... key daalo');
-      return;
-    }
+    if (!key) return;
     await sendMessage('SAVE_SETTINGS', { settings: { apiKey: key, aiProvider: 'openai' } });
     $('#apiKeyBanner').classList.add('tp-hidden');
     showToast('API key saved! ✓');

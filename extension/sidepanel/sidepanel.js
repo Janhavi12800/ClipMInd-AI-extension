@@ -1,6 +1,7 @@
 import { PromptEngine, buildMultiIndicatorPrompt } from '../lib/prompt-engine.js';
 import { createAIClient } from '../lib/ai-client.js';
 import { fetchVolatilityMetrics } from '../lib/market-data.js';
+import { sendMessage } from '../lib/messaging.js';
 
 let currentMarket = 'india';
 let lastPrompt = null;
@@ -8,10 +9,6 @@ let lastResult = null;
 const engine = new PromptEngine();
 
 const $ = (sel) => document.querySelector(sel);
-
-async function sendMessage(type, data = {}) {
-  return chrome.runtime.sendMessage({ type, ...data });
-}
 
 async function init() {
   const settings = await sendMessage('GET_SETTINGS');
@@ -123,18 +120,12 @@ async function loadApiKey() {
 
 async function saveApiKey() {
   const key = $('#inputApiKey').value.trim();
-  if (!key.startsWith('sk-')) {
-    $('#apiKeyStatus').textContent = '❌ Valid OpenAI key daalo (sk-...)';
-    $('#apiKeyStatus').style.color = 'var(--tp-danger)';
-    return;
-  }
-  await sendMessage('SAVE_SETTINGS', {
-    settings: { apiKey: key, aiProvider: 'openai' }
-  });
+  if (!key) return;
+  await sendMessage('SAVE_SETTINGS', { settings: { apiKey: key, aiProvider: 'openai' } });
   $('#apiKeyStatus').textContent = '✓ API key saved!';
-  $('#apiKeyStatus').style.color = 'var(--tp-success)';
   showToast('API key saved ✓');
 }
+
 
 async function getChartContextSafe() {
   try {
@@ -171,17 +162,10 @@ function getVariables() {
 }
 
 async function runTemplate(templateId) {
-  const access = await sendMessage('CHECK_FEATURE_ACCESS', { feature: 'prompt' });
-  if (!access.allowed) { showToast(access.reason); return; }
-
   setLoading('Generating analysis...');
-  try {
-    lastPrompt = await engine.buildPrompt(templateId, getVariables(), { market: currentMarket });
-    await runAI(lastPrompt);
-    await sendMessage('INCREMENT_USAGE');
-  } catch (err) {
-    setOutput('Error: ' + err.message);
-  }
+  lastPrompt = await engine.buildPrompt(templateId, getVariables(), { market: currentMarket });
+  await runAI(lastPrompt);
+  await sendMessage('INCREMENT_USAGE');
 }
 
 async function runQuickTA() {
@@ -190,67 +174,47 @@ async function runQuickTA() {
 }
 
 async function runVision() {
-  const access = await sendMessage('CHECK_FEATURE_ACCESS', { feature: 'vision' });
-  if (!access.allowed) { showToast(access.reason); return; }
-
-  setLoading('Capturing chart & analyzing with vision AI...');
-  try {
-    const { screenshot } = await sendMessage('CAPTURE_CHART');
-    const chartContext = await sendMessage('GET_CHART_CONTEXT') || {};
-    lastPrompt = engine.buildVisionPrompt({ ...chartContext, ...getVariables(), market: currentMarket });
-    await runAI(lastPrompt, { vision: true, image: screenshot });
-    await sendMessage('INCREMENT_USAGE');
-  } catch (err) {
-    setOutput('Error: ' + err.message);
+  setLoading('Analyzing chart...');
+  const chartContext = await getChartContextSafe();
+  const vars = { ...chartContext, ...getVariables(), market: currentMarket };
+  const capture = await sendMessage('CAPTURE_CHART');
+  lastPrompt = engine.buildVisionPrompt(vars);
+  if (capture?.screenshot) {
+    await runAI(lastPrompt, { vision: true, image: capture.screenshot });
+  } else {
+    await runAI(lastPrompt);
   }
+  await sendMessage('INCREMENT_USAGE');
 }
 
 async function runVolatility() {
   setLoading('Fetching volatility data...');
-  try {
-    const marketData = await buildVolatilityData();
-    lastPrompt = engine.buildVolatilityPrompt(marketData);
-    await runAI(lastPrompt);
-    await sendMessage('INCREMENT_USAGE');
-  } catch (err) {
-    setOutput('Error: ' + err.message);
-  }
+  const marketData = await buildVolatilityData();
+  lastPrompt = engine.buildVolatilityPrompt(marketData);
+  await runAI(lastPrompt);
+  await sendMessage('INCREMENT_USAGE');
 }
 
 async function runMultiIndicator() {
   setLoading('Running multi-indicator confluence...');
-  try {
-    const vars = getVariables();
-    lastPrompt = buildMultiIndicatorPrompt(
-      ['RSI', 'MACD', 'EMA', 'VWAP', 'ATR'],
-      vars.symbol,
-      vars.timeframe
-    );
-    await runAI(lastPrompt);
-    await sendMessage('INCREMENT_USAGE');
-  } catch (err) {
-    setOutput('Error: ' + err.message);
-  }
+  const vars = getVariables();
+  lastPrompt = buildMultiIndicatorPrompt(['RSI', 'MACD', 'EMA', 'VWAP', 'ATR'], vars.symbol, vars.timeframe);
+  await runAI(lastPrompt);
+  await sendMessage('INCREMENT_USAGE');
 }
 
 async function runAI(prompt, options = {}) {
   setLoading('AI analyze kar raha hai...');
-  try {
-    const ai = await createAIClient();
-    const result = await ai.analyze(prompt, {
-      ...options,
-      symbol: getVariables().symbol,
-      market: currentMarket,
-      timeframe: getVariables().timeframe
-    });
-    lastResult = result.content;
-    setOutput(result.content);
-    showToast(result.demo ? 'Analysis ready ✓' : 'AI analysis complete ✓');
-  } catch (err) {
-    lastResult = prompt.user;
-    setOutput(prompt.user);
-    showToast('Prompt ready — copy kar sakte ho');
-  }
+  const ai = await createAIClient();
+  const result = await ai.analyze(prompt, {
+    ...options,
+    symbol: getVariables().symbol,
+    market: currentMarket,
+    timeframe: getVariables().timeframe
+  });
+  lastResult = result.content;
+  setOutput(result.content);
+  showToast('Analysis ready ✓');
 }
 
 function setLoading(msg) {

@@ -48,10 +48,11 @@ async function fetchIndiaQuote(symbol) {
     const data = await res.json();
     const meta = data?.chart?.result?.[0]?.meta;
     if (!meta) return null;
+    const prev = meta.chartPreviousClose || meta.previousClose;
     return {
       price: meta.regularMarketPrice,
-      previousClose: meta.previousClose,
-      change: ((meta.regularMarketPrice - meta.previousClose) / meta.previousClose * 100).toFixed(2) + '%',
+      previousClose: prev,
+      change: prev && prev > 0 ? ((meta.regularMarketPrice - prev) / prev * 100).toFixed(2) + '%' : '0%',
       currency: 'INR',
       source: 'Yahoo Finance'
     };

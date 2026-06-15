@@ -144,7 +144,7 @@ async function runAI(){
     const res=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user:prompt,symbol:ctx.symbol,market:ctx.market,timeframe:ctx.timeframe,apiKey:key||undefined})});
     const data=await res.json();
     document.getElementById('output').textContent=data.content||prompt;
-    document.getElementById('aiStatus').textContent='✅ '+ctx.symbol+' ('+ctx.timeframe+')'+(data.meta?.spotPrice?' — live ₹/'+data.meta.spotPrice:'');
+    document.getElementById('aiStatus').textContent='✅ '+ctx.symbol+' ('+ctx.timeframe+')'+(data.meta?.spotPrice?' — live data ✓':'');
   }catch(e){
     document.getElementById('output').textContent=prompt;
     document.getElementById('aiStatus').textContent='✅ Prompt ready';
