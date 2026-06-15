@@ -11,6 +11,7 @@ Client (React / Chrome Extension)
 ┌───────────────────────────────────┐
 │  Supabase Edge Functions (Deno)   │
 │  ├── auth-session  (public)       │
+│  ├── payments      (webhooks + checkout) │
 │  └── api           (JWT required) │
 └───────────────┬───────────────────┘
                 │
