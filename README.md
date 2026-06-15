@@ -102,6 +102,7 @@ npm run dev
 | Document | Description |
 |----------|-------------|
 | [Development Guidebook](docs/DEVELOPMENT_GUIDEBOOK.md) | Full technical architecture & prompt design |
+| [Marketing Kit](docs/MARKETING_KIT.md) | Social posts, YouTube script, email templates (Hindi + English) |
 | [Launch Checklist](docs/LAUNCH_CHECKLIST.md) | Step-by-step production deployment |
 | [Chrome Web Store Listing](docs/CHROME_WEB_STORE_LISTING.md) | Store submission copy & screenshots guide |
 | [Privacy Policy](docs/PRIVACY_POLICY.md) | Required for Chrome Web Store |
@@ -110,8 +111,15 @@ npm run dev
 ## Build for Chrome Web Store
 
 ```bash
+# Extension zip
 bash scripts/build-extension.sh
-# Output: dist/tradeprompt-ai-v1.0.0.zip
+
+# Store screenshots & promo images
+python3 scripts/generate-store-assets.py
+# Output: store-assets/generated/
+
+# Razorpay plan setup
+RAZORPAY_KEY_ID=rzp_test_xxx RAZORPAY_KEY_SECRET=xxx node backend/scripts/setup-razorpay.js
 ```
 
 ## Disclaimer

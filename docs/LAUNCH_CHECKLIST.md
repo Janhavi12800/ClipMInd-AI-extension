@@ -62,23 +62,26 @@ docker run -d -p 3001:3001 \
 ## Phase 4: Chrome Web Store (1-2 days review)
 
 - [ ] Pay $5 developer fee: https://chrome.google.com/webstore/devconsole
-- [ ] Upload `dist/tradeprompt-ai-v1.0.0.zip`
+- [ ] Generate store assets: `python3 scripts/generate-store-assets.py`
+- [ ] Upload screenshots from `store-assets/generated/`
+- [ ] Upload zip: `bash scripts/build-extension.sh`
 - [ ] Fill listing (use `docs/CHROME_WEB_STORE_LISTING.md`)
-- [ ] Add screenshots (1280x800):
-  1. Popup with templates
-  2. Side panel analysis
-  3. TradingView integration
-  4. Vision analysis result
-  5. Settings/subscription page
-- [ ] Privacy policy URL (host `docs/PRIVACY_POLICY.md` on GitHub or your site)
+- [ ] Privacy policy URL: `https://YOUR_API_URL/privacy.html`
 - [ ] Submit for review
+
+## Phase 4b: Marketing Launch
+
+- [ ] Landing page live at `https://YOUR_API_URL/`
+- [ ] Post launch content (see `docs/MARKETING_KIT.md`)
+- [ ] Set up support email: support@tradeprompt.ai
+- [ ] Admin dashboard: `https://YOUR_API_URL/admin` (set ADMIN_SECRET)
 
 ## Phase 5: Go Live
 
 - [ ] Test full flow: Install → Trial → Subscribe → Pay → Activate
-- [ ] Set up support email: support@tradeprompt.ai
+- [ ] Run Razorpay setup: `RAZORPAY_KEY_ID=xxx RAZORPAY_KEY_SECRET=xxx node backend/scripts/setup-razorpay.js`
+- [ ] Monitor admin dashboard for subscriptions
 - [ ] Share on social media / trading communities
-- [ ] Monitor Razorpay dashboard for payments
 
 ## Pricing Summary
 

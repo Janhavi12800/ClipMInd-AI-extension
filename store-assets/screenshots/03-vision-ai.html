@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Screenshot 3 — Vision AI</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 1280px; height: 800px; overflow: hidden;
+      font-family: -apple-system, sans-serif;
+      background: linear-gradient(135deg, #0f172a, #1a0a2e);
+      padding: 40px;
+    }
+    .label { font-size: 14px; color: #8b5cf6; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .headline { font-size: 32px; font-weight: 800; color: #f1f5f9; margin-bottom: 32px; }
+    .content { display: flex; gap: 32px; align-items: flex-start; }
+    .chart-shot {
+      width: 560px; height: 380px; background: #131722; border-radius: 12px;
+      border: 2px solid #6366f1; position: relative; overflow: hidden;
+      box-shadow: 0 0 40px rgba(99,102,241,0.3);
+    }
+    .chart-shot::after {
+      content: '📸 Vision AI'; position: absolute; top: 12px; right: 12px;
+      background: #6366f1; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    }
+    .arrow { font-size: 48px; color: #6366f1; align-self: center; }
+    .result {
+      flex: 1; background: #1e293b; border-radius: 12px; border: 1px solid #334155;
+      padding: 24px; font-size: 14px; line-height: 1.8; color: #e2e8f0;
+    }
+    .result h3 { font-size: 16px; color: #6366f1; margin-bottom: 12px; }
+    .highlight { color: #10b981; font-weight: 600; }
+    .steps { display: flex; gap: 16px; margin-top: 32px; }
+    .step { flex: 1; background: #1e293b; border-radius: 10px; padding: 16px; border: 1px solid #334155; text-align: center; }
+    .step .num { font-size: 24px; margin-bottom: 8px; }
+    .step p { font-size: 13px; color: #94a3b8; }
+    .candles { display: flex; align-items: flex-end; gap: 4px; padding: 20px; height: 280px; }
+    .c { width: 10px; border-radius: 2px; }
+  </style>
+</head>
+<body>
+  <div class="label">Vision AI</div>
+  <div class="headline">Screenshot → Instant Chart Analysis</div>
+
+  <div class="content">
+    <div class="chart-shot">
+      <div style="background:#1e222d;padding:8px 12px;font-size:12px;color:#d1d4dc">NIFTY · 15m · NSE</div>
+      <div class="candles">
+        <div class="c" style="height:60px;background:#ef5350"></div>
+        <div class="c" style="height:100px;background:#26a69a"></div>
+        <div class="c" style="height:140px;background:#26a69a"></div>
+        <div class="c" style="height:120px;background:#26a69a"></div>
+        <div class="c" style="height:180px;background:#26a69a"></div>
+        <div class="c" style="height:200px;background:#26a69a"></div>
+        <div class="c" style="height:80px;background:#ef5350"></div>
+        <div class="c" style="height:220px;background:#26a69a"></div>
+        <div class="c" style="height:250px;background:#26a69a"></div>
+      </div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="result">
+      <h3>🤖 GPT-4o Vision Analysis</h3>
+      <div class="highlight">📊 BIAS: Bullish</div>
+      Pattern: Ascending channel on 15m<br>
+      Support: <span class="highlight">22,450</span> (previous day low)<br>
+      Resistance: 22,680 (channel top)<br>
+      RSI: 58 — neutral-bullish, no divergence<br>
+      MACD: Bullish crossover 3 bars ago<br>
+      Volume: Rising on up-moves ✓<br>
+      Entry: 22,520–22,540 | SL: 22,420<br>
+      📉 CONFIDENCE: <span class="highlight">8/10</span>
+    </div>
+  </div>
+
+  <div class="steps">
+    <div class="step"><div class="num">1️⃣</div><p>Click Vision Analysis button</p></div>
+    <div class="step"><div class="num">2️⃣</div><p>Chart screenshot captured</p></div>
+    <div class="step"><div class="num">3️⃣</div><p>AI reads indicators & levels</p></div>
+    <div class="step"><div class="num">4️⃣</div><p>Get structured trade setup</p></div>
+  </div>
+</body>
+</html>

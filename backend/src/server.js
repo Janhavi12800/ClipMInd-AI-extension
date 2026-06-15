@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url';
 import { v4 as uuidv4 } from 'uuid';
 import Razorpay from 'razorpay';
 import { LicenseStore } from './storage.js';
+import { createAdminRoutes } from './admin.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -256,6 +257,8 @@ app.post('/api/webhook/razorpay', (req, res) => {
 app.get('/subscribe', (req, res) => {
   res.redirect('/checkout.html');
 });
+
+createAdminRoutes(app, store);
 
 app.listen(PORT, () => {
   console.log(`TradePrompt AI Backend → ${API_BASE_URL}`);

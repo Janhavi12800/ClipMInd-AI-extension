@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin — TradePrompt AI</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, sans-serif; background: #0f172a; color: #f1f5f9; padding: 24px; }
+    h1 { font-size: 22px; margin-bottom: 24px; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+    .stat { background: #1e293b; border-radius: 12px; padding: 20px; border: 1px solid #334155; }
+    .stat .val { font-size: 32px; font-weight: 800; color: #6366f1; }
+    .stat .label { font-size: 13px; color: #94a3b8; margin-top: 4px; }
+    table { width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 12px; overflow: hidden; }
+    th, td { padding: 12px 16px; text-align: left; font-size: 13px; border-bottom: 1px solid #334155; }
+    th { background: #111827; color: #94a3b8; font-size: 11px; text-transform: uppercase; }
+    .badge { padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+    .badge.active { background: rgba(16,185,129,0.2); color: #10b981; }
+    .badge.demo { background: rgba(245,158,11,0.2); color: #f59e0b; }
+    input { padding: 10px; background: #334155; border: 1px solid #475569; border-radius: 8px; color: #f1f5f9; width: 300px; margin-bottom: 16px; }
+    .error { color: #ef4444; }
+  </style>
+</head>
+<body>
+  <h1>⚡ TradePrompt AI — Admin Dashboard</h1>
+  <input type="password" id="secret" placeholder="Enter ADMIN_SECRET">
+  <button onclick="loadStats()" style="padding:10px 20px;background:#6366f1;color:white;border:none;border-radius:8px;cursor:pointer;margin-left:8px">Load</button>
+  <div id="error" class="error" style="margin-top:8px"></div>
+
+  <div class="stats" id="stats" style="display:none;margin-top:24px">
+    <div class="stat"><div class="val" id="s-total">—</div><div class="label">Total Licenses</div></div>
+    <div class="stat"><div class="val" id="s-active">—</div><div class="label">Active Subscriptions</div></div>
+    <div class="stat"><div class="val" id="s-mrr">—</div><div class="label">Est. MRR</div></div>
+    <div class="stat"><div class="val" id="s-demo">—</div><div class="label">Demo Licenses</div></div>
+  </div>
+
+  <table id="table" style="display:none;margin-top:16px">
+    <thead><tr><th>Email</th><th>Status</th><th>Created</th><th>Expires</th><th>Type</th></tr></thead>
+    <tbody id="tbody"></tbody>
+  </table>
+
+  <script>
+    async function loadStats() {
+      const secret = document.getElementById('secret').value;
+      document.getElementById('error').textContent = '';
+      try {
+        const res = await fetch('/api/admin/stats', { headers: { 'x-admin-secret': secret } });
+        if (!res.ok) throw new Error('Invalid secret or unauthorized');
+        const data = await res.json();
+        document.getElementById('stats').style.display = 'grid';
+        document.getElementById('table').style.display = 'table';
+        document.getElementById('s-total').textContent = data.totalLicenses;
+        document.getElementById('s-active').textContent = data.activeSubscriptions;
+        document.getElementById('s-mrr').textContent = data.estimatedMRR;
+        document.getElementById('s-demo').textContent = data.demoLicenses;
+        document.getElementById('tbody').innerHTML = data.recent.map(r => `
+          <tr>
+            <td>${r.email}</td>
+            <td><span class="badge ${r.status}">${r.status}</span></td>
+            <td>${new Date(r.createdAt).toLocaleDateString()}</td>
+            <td>${new Date(r.expiry).toLocaleDateString()}</td>
+            <td>${r.demo ? '<span class="badge demo">demo</span>' : 'paid'}</td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        document.getElementById('error').textContent = e.message;
+      }
+    }
+  </script>
+</body>
+</html>
