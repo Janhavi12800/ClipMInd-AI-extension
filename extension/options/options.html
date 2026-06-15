@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TradePrompt AI — Settings</title>
+  <link rel="stylesheet" href="../assets/styles.css">
+  <style>
+    body { max-width: 640px; margin: 0 auto; padding-bottom: 40px; }
+    .tp-nav { display: flex; gap: 4px; padding: 12px 16px; border-bottom: 1px solid var(--tp-border); }
+    .tp-nav-btn { padding: 8px 16px; border-radius: 8px; background: transparent; border: none; color: var(--tp-text-muted); cursor: pointer; font-size: 13px; font-weight: 600; }
+    .tp-nav-btn.active { background: var(--tp-primary); color: white; }
+    .tp-page { display: none; }
+    .tp-page.active { display: block; }
+    .tp-save-bar { position: fixed; bottom: 0; left: 0; right: 0; padding: 12px 16px; background: var(--tp-bg-card); border-top: 1px solid var(--tp-border); text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="tp-header">
+    <span style="font-size:22px">⚡</span>
+    <h1>TradePrompt AI Settings</h1>
+  </div>
+
+  <div class="tp-nav">
+    <button class="tp-nav-btn active" data-page="general">General</button>
+    <button class="tp-nav-btn" data-page="ai">AI Provider</button>
+    <button class="tp-nav-btn" data-page="risk">Risk</button>
+    <button class="tp-nav-btn" data-page="subscription">Subscription</button>
+    <button class="tp-nav-btn" data-page="about">About</button>
+  </div>
+
+  <!-- General -->
+  <div class="tp-page active" id="page-general">
+    <div class="tp-section">
+      <div class="tp-section-title">Default Market</div>
+      <select class="tp-select" id="settingMarket">
+        <option value="india">🇮🇳 Indian Stock Market (NSE/BSE)</option>
+        <option value="forex">💱 Forex</option>
+        <option value="crypto">₿ Cryptocurrency</option>
+      </select>
+    </div>
+    <div class="tp-section">
+      <div class="tp-section-title">Default Capital (₹)</div>
+      <input class="tp-input" type="number" id="settingCapital" value="100000" min="1000">
+    </div>
+  </div>
+
+  <!-- AI Provider -->
+  <div class="tp-page" id="page-ai">
+    <div class="tp-section">
+      <div class="tp-section-title">AI Provider</div>
+      <select class="tp-select" id="settingProvider">
+        <option value="openai">OpenAI (GPT-4o)</option>
+        <option value="claude">Anthropic Claude</option>
+      </select>
+      <p style="font-size:12px;color:var(--tp-text-muted);margin-top:8px">
+        Your API key is stored locally and never sent to our servers.
+      </p>
+    </div>
+    <div class="tp-section">
+      <div class="tp-section-title">API Key</div>
+      <input class="tp-input" type="password" id="settingApiKey" placeholder="sk-... or sk-ant-...">
+    </div>
+    <div class="tp-section">
+      <button class="tp-btn tp-btn-secondary" id="btnTestAI">Test Connection</button>
+      <div id="testResult" style="margin-top:8px;font-size:13px"></div>
+    </div>
+  </div>
+
+  <!-- Risk -->
+  <div class="tp-page" id="page-risk">
+    <div class="tp-section">
+      <div class="tp-section-title">Risk Per Trade (%)</div>
+      <input class="tp-input" type="number" id="settingRisk" value="1" min="0.1" max="5" step="0.1">
+    </div>
+    <div class="tp-section">
+      <div class="tp-section-title">Minimum Risk:Reward</div>
+      <select class="tp-select" id="settingMinRR">
+        <option value="1.5">1:1.5</option>
+        <option value="2" selected>1:2</option>
+        <option value="3">1:3</option>
+      </select>
+    </div>
+    <div class="tp-section">
+      <div class="tp-card">
+        <div style="font-weight:600;margin-bottom:8px">Risk Management Rules</div>
+        <ul style="font-size:13px;color:var(--tp-text-muted);padding-left:20px">
+          <li>Never risk more than 2% per trade</li>
+          <li>Max 3 concurrent positions</li>
+          <li>Stop trading after 3 consecutive losses</li>
+          <li>Always use stop-loss orders</li>
+          <li>Position size = (Capital × Risk%) / (Entry - SL)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Subscription -->
+  <div class="tp-page" id="page-subscription">
+    <div class="tp-section">
+      <div class="tp-card" style="text-align:center;padding:24px">
+        <div style="font-size:32px;margin-bottom:8px">⚡</div>
+        <div style="font-size:20px;font-weight:700;margin-bottom:4px">TradePrompt AI Pro</div>
+        <div style="font-size:28px;font-weight:800;color:var(--tp-primary);margin:12px 0">
+          ₹100<span style="font-size:14px;font-weight:400;color:var(--tp-text-muted)">/month</span>
+        </div>
+        <div id="subStatus" style="font-size:13px;color:var(--tp-text-muted);margin-bottom:16px">
+          Loading...
+        </div>
+        <ul style="text-align:left;font-size:13px;padding-left:20px;margin-bottom:16px;color:var(--tp-text-muted)">
+          <li>3-day free trial included</li>
+          <li>Unlimited prompt generation</li>
+          <li>Vision AI chart analysis</li>
+          <li>All market templates (India, Forex, Crypto)</li>
+          <li>Multi-indicator confluence</li>
+          <li>Volatility analysis engine</li>
+        </ul>
+        <div class="tp-form-group">
+          <input class="tp-input" type="email" id="subEmail" placeholder="your@email.com">
+        </div>
+        <button class="tp-upgrade-btn" id="btnSubscribe">Start 3-Day Free Trial</button>
+        <p style="font-size:11px;color:var(--tp-text-muted);margin-top:12px">
+          Payment via Razorpay. Cancel anytime.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- About -->
+  <div class="tp-page" id="page-about">
+    <div class="tp-section">
+      <div class="tp-card">
+        <div style="font-weight:700;font-size:16px;margin-bottom:8px">TradePrompt AI v1.0.0</div>
+        <p style="font-size:13px;color:var(--tp-text-muted);margin-bottom:12px">
+          Professional AI prompt engineering for Indian stocks, Forex, and Crypto trading.
+        </p>
+        <div class="tp-divider"></div>
+        <div style="font-size:12px;color:var(--tp-text-muted);line-height:1.6">
+          <strong>Disclaimer:</strong> This tool provides AI-generated analysis for educational purposes only.
+          It is not financial advice. Trading involves substantial risk of loss. The developers are not
+          SEBI-registered investment advisors. Always do your own research and consult a qualified
+          financial advisor before making investment decisions.
+        </div>
+      </div>
+    </div>
+    <div class="tp-section">
+      <div class="tp-section-title">Supported Platforms</div>
+      <div class="tp-card" style="font-size:13px">
+        <div>📊 TradingView (primary)</div>
+        <div style="margin-top:4px">🇮🇳 NSE / BSE symbols</div>
+        <div style="margin-top:4px">💱 Forex pairs (FX:)</div>
+        <div style="margin-top:4px">₿ Crypto (BINANCE:, etc.)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tp-save-bar">
+    <button class="tp-btn tp-btn-primary" id="btnSave" style="max-width:300px;margin:0 auto">Save Settings</button>
+  </div>
+
+  <script type="module" src="options.js"></script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TradePrompt AI</title>
+  <link rel="stylesheet" href="../assets/styles.css">
+  <style>
+    body { width: 380px; min-height: 500px; }
+  </style>
+</head>
+<body>
+  <div class="tp-header">
+    <span style="font-size:22px">⚡</span>
+    <h1>TradePrompt AI</h1>
+    <span class="badge" id="licenseBadge">Trial</span>
+  </div>
+
+  <div class="tp-license-bar trial" id="licenseBar">
+    Loading license status...
+  </div>
+
+  <div class="tp-section">
+    <div class="tp-section-title">Select Market</div>
+    <div class="tp-grid-3" id="marketTabs">
+      <div class="tp-market-tab active" data-market="india">🇮🇳 India</div>
+      <div class="tp-market-tab" data-market="forex">💱 Forex</div>
+      <div class="tp-market-tab" data-market="crypto">₿ Crypto</div>
+    </div>
+  </div>
+
+  <div class="tp-section">
+    <div class="tp-section-title">1-Click Prompt Generation</div>
+    <div id="templateList"></div>
+  </div>
+
+  <div class="tp-section">
+    <button class="tp-btn tp-btn-primary" id="btnVisionAnalysis">
+      📸 Vision Chart Analysis
+    </button>
+    <div style="margin-top:8px">
+      <button class="tp-btn tp-btn-secondary" id="btnOpenSidePanel">
+        Open Full Analysis Panel →
+      </button>
+    </div>
+  </div>
+
+  <div class="tp-section tp-hidden" id="outputSection">
+    <div class="tp-section-title">Generated Prompt</div>
+    <div class="tp-output" id="promptOutput"></div>
+    <div class="tp-actions">
+      <button class="tp-btn tp-btn-primary tp-btn-sm" id="btnCopy">📋 Copy</button>
+      <button class="tp-btn tp-btn-secondary tp-btn-sm" id="btnAnalyze">🤖 Analyze with AI</button>
+    </div>
+  </div>
+
+  <div class="tp-section tp-hidden" id="aiOutputSection">
+    <div class="tp-section-title">AI Analysis</div>
+    <div class="tp-output" id="aiOutput"></div>
+  </div>
+
+  <div class="tp-section tp-hidden" id="upgradeSection">
+    <div class="tp-card" style="text-align:center">
+      <div style="font-size:24px;margin-bottom:8px">🔒</div>
+      <div style="font-weight:700;margin-bottom:4px">Trial Expired</div>
+      <div style="font-size:13px;color:var(--tp-text-muted);margin-bottom:12px">
+        Subscribe for just ₹100/month
+      </div>
+      <button class="tp-upgrade-btn" id="btnUpgrade">Subscribe Now — ₹100/mo</button>
+    </div>
+  </div>
+
+  <div class="tp-disclaimer">
+    ⚠️ Educational purposes only. Not financial advice. Trade at your own risk.
+  </div>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

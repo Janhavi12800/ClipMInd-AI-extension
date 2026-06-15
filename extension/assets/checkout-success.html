@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Payment Successful — TradePrompt AI</title>
+  <style>
+    body {
+      font-family: -apple-system, sans-serif;
+      background: #0f172a;
+      color: #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .card {
+      background: #1e293b;
+      border-radius: 16px;
+      padding: 40px;
+      text-align: center;
+      max-width: 400px;
+      border: 1px solid #334155;
+    }
+    .icon { font-size: 48px; margin-bottom: 16px; }
+    h1 { font-size: 24px; margin-bottom: 8px; }
+    p { color: #94a3b8; font-size: 14px; }
+    .key {
+      background: #334155;
+      padding: 12px;
+      border-radius: 8px;
+      font-family: monospace;
+      margin: 16px 0;
+      word-break: break-all;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">✅</div>
+    <h1>Payment Successful!</h1>
+    <p>Your TradePrompt AI Pro subscription is now active.</p>
+    <p>Copy your license key and paste it in the extension settings:</p>
+    <div class="key" id="licenseKey">Loading...</div>
+    <p style="font-size:12px">You can close this tab and return to TradingView.</p>
+  </div>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const key = params.get('license_key') || 'Check your email for the license key';
+    document.getElementById('licenseKey').textContent = key;
+
+    if (params.get('license_key')) {
+      chrome?.runtime?.sendMessage?.({
+        type: 'ACTIVATE_SUBSCRIPTION',
+        data: {
+          licenseKey: params.get('license_key'),
+          expiry: params.get('expiry'),
+          email: params.get('email')
+        }
+      });
+    }
+  </script>
+</body>
+</html>

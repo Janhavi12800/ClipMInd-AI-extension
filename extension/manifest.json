@@ -1,0 +1,62 @@
+{
+  "manifest_version": 3,
+  "name": "TradePrompt AI — Smart Trading Prompts",
+  "version": "1.0.0",
+  "description": "Professional AI prompt engineering for Indian stocks (NSE/BSE), Forex & Crypto. 1-click chart analysis with vision AI.",
+  "default_locale": "en",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "sidePanel",
+    "alarms",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://*.tradingview.com/*",
+    "https://in.tradingview.com/*",
+    "https://www.nseindia.com/*",
+    "https://api.tradeprompt.ai/*",
+    "http://localhost:3001/*"
+  ],
+  "background": {
+    "service_worker": "background/service-worker.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "assets/icons/icon16.png",
+      "32": "assets/icons/icon32.png",
+      "48": "assets/icons/icon48.png",
+      "128": "assets/icons/icon128.png"
+    },
+    "default_title": "TradePrompt AI"
+  },
+  "side_panel": {
+    "default_path": "sidepanel/sidepanel.html"
+  },
+  "options_page": "options/options.html",
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.tradingview.com/*",
+        "https://in.tradingview.com/*"
+      ],
+      "js": ["content/tradingview.js"],
+      "css": ["content/content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "assets/icons/icon16.png",
+    "32": "assets/icons/icon32.png",
+    "48": "assets/icons/icon48.png",
+    "128": "assets/icons/icon128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["assets/*", "lib/*"],
+      "matches": ["https://*.tradingview.com/*"]
+    }
+  ]
+}

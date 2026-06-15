@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TradePrompt AI — Analysis Panel</title>
+  <link rel="stylesheet" href="../assets/styles.css">
+  <style>
+    body { width: 100%; min-height: 100vh; }
+    .tp-sidepanel { max-width: 100%; }
+    .tp-chart-info { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .tp-chart-info .tp-tag { font-size: 12px; padding: 4px 10px; }
+  </style>
+</head>
+<body>
+  <div class="tp-sidepanel">
+    <div class="tp-header">
+      <span style="font-size:22px">⚡</span>
+      <h1>TradePrompt AI</h1>
+      <span class="badge" id="licenseBadge">Pro</span>
+    </div>
+
+    <div class="tp-license-bar trial" id="licenseBar"></div>
+
+    <div class="tp-section">
+      <div class="tp-section-title">Chart Context</div>
+      <div class="tp-chart-info" id="chartInfo">
+        <span class="tp-tag">No chart detected</span>
+      </div>
+      <button class="tp-btn tp-btn-secondary tp-btn-sm" id="btnRefreshContext">↻ Refresh</button>
+    </div>
+
+    <div class="tp-section">
+      <div class="tp-section-title">Market</div>
+      <div class="tp-grid-3" id="marketTabs">
+        <div class="tp-market-tab active" data-market="india">🇮🇳 India</div>
+        <div class="tp-market-tab" data-market="forex">💱 Forex</div>
+        <div class="tp-market-tab" data-market="crypto">₿ Crypto</div>
+      </div>
+    </div>
+
+    <div class="tp-section">
+      <div class="tp-grid-2">
+        <div class="tp-form-group">
+          <label class="tp-label">Symbol</label>
+          <input class="tp-input" id="inputSymbol" placeholder="e.g. RELIANCE">
+        </div>
+        <div class="tp-form-group">
+          <label class="tp-label">Timeframe</label>
+          <select class="tp-select" id="inputTimeframe">
+            <option value="1m">1 min</option>
+            <option value="5m">5 min</option>
+            <option value="15m" selected>15 min</option>
+            <option value="1h">1 hour</option>
+            <option value="4h">4 hour</option>
+            <option value="1D">Daily</option>
+            <option value="1W">Weekly</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="tp-section">
+      <div class="tp-section-title">Quick Actions</div>
+      <div class="tp-grid-2" style="margin-bottom:10px">
+        <button class="tp-btn tp-btn-primary" id="btnQuickTA">📊 Technical Analysis</button>
+        <button class="tp-btn tp-btn-primary" id="btnVision">📸 Vision Analysis</button>
+      </div>
+      <div class="tp-grid-2">
+        <button class="tp-btn tp-btn-secondary" id="btnVolatility">🌊 Volatility</button>
+        <button class="tp-btn tp-btn-secondary" id="btnMultiIndicator">📈 Multi-Indicator</button>
+      </div>
+    </div>
+
+    <div class="tp-section">
+      <div class="tp-section-title">Prompt Templates</div>
+      <div id="templateList"></div>
+    </div>
+
+    <div class="tp-section">
+      <div class="tp-section-title">Analysis Output</div>
+      <div class="tp-output" id="analysisOutput">
+        Select a template or quick action to begin analysis.
+      </div>
+      <div class="tp-actions">
+        <button class="tp-btn tp-btn-secondary tp-btn-sm" id="btnCopyResult">📋 Copy</button>
+        <button class="tp-btn tp-btn-secondary tp-btn-sm" id="btnCopyPrompt">📝 Copy Prompt</button>
+      </div>
+    </div>
+
+    <div class="tp-disclaimer">
+      ⚠️ Not financial advice. AI analysis may contain errors. Always verify independently.
+    </div>
+  </div>
+
+  <script type="module" src="sidepanel.js"></script>
+</body>
+</html>
