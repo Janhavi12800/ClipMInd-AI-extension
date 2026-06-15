@@ -6,7 +6,11 @@
   "type": "module",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "node --watch src/server.js"
+    "dev": "node --watch src/server.js",
+    "setup": "node scripts/setup-wizard.js",
+    "setup:demo": "node scripts/setup-wizard.js --demo",
+    "setup:razorpay": "node scripts/setup-razorpay.js",
+    "verify": "node scripts/verify-setup.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

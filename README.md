@@ -22,6 +22,18 @@ Professional AI prompt engineering Chrome extension for **Indian Stock Market (N
 
 *Note: You need your own OpenAI or Claude API key (pay-per-use, typically ₹50-200/month for regular use).*
 
+## Account Setup (Start Here)
+
+```bash
+cd backend
+npm install
+npm run setup      # Interactive wizard — Razorpay + .env + secrets
+npm run dev        # Start backend
+npm run verify     # Check everything is configured
+```
+
+Full step-by-step guide (Hindi + English): **[docs/ACCOUNT_SETUP.md](docs/ACCOUNT_SETUP.md)**
+
 ## Quick Start
 
 ### 1. Load Extension (Development)
@@ -101,6 +113,7 @@ npm run dev
 
 | Document | Description |
 |----------|-------------|
+| [Account Setup Guide](docs/ACCOUNT_SETUP.md) | **Start here** — Razorpay, OpenAI, Chrome Store setup |
 | [Development Guidebook](docs/DEVELOPMENT_GUIDEBOOK.md) | Full technical architecture & prompt design |
 | [Marketing Kit](docs/MARKETING_KIT.md) | Social posts, YouTube script, email templates (Hindi + English) |
 | [Launch Checklist](docs/LAUNCH_CHECKLIST.md) | Step-by-step production deployment |
