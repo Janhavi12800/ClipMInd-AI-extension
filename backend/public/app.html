@@ -30,6 +30,15 @@
     .ok{color:var(--ok);font-size:13px;margin-top:8px}
     .warn{background:rgba(245,158,11,.1);border:1px solid #f59e0b;border-radius:8px;padding:12px;font-size:13px;margin-bottom:16px}
     a{color:var(--p)}
+    .verdict{display:none;padding:18px;border-radius:12px;margin-bottom:14px;border:2px solid;font-size:14px;line-height:1.6}
+    .verdict.show{display:block}
+    .verdict .v-title{font-size:18px;font-weight:800;margin-bottom:6px}
+    .verdict .v-sub{color:var(--muted);font-size:12px;margin-bottom:10px}
+    .verdict .v-detail{font-size:13px;margin-bottom:8px}
+    .verdict .v-reasons{font-size:12px;color:var(--muted)}
+    .verdict.buy{background:rgba(16,185,129,.12);border-color:#10b981}
+    .verdict.hold,.verdict.dip{background:rgba(245,158,11,.12);border-color:#f59e0b}
+    .verdict.avoid,.verdict.sell{background:rgba(239,68,68,.12);border-color:#ef4444}
   </style>
 </head>
 <body>
@@ -74,6 +83,7 @@
 
   <div class="card">
     <div class="title">Output</div>
+    <div id="verdict" class="verdict"></div>
     <div class="out" id="output">Template select karo ya neeche button dabao...</div>
     <div class="row">
       <button class="btn btn-s" onclick="copyOut()">📋 Copy</button>
@@ -86,17 +96,20 @@
 <script>
 const TPL={
 india:[
+{id:'buy',n:'🛒 Khareedna Chahiye? (Buy / Hold / Avoid)',t:`Should I buy {symbol} right now on {tf}? Give CLEAR verdict.\n\nIST: {time} | Market: {status}\n\nRequired answer:\n1. VERDICT: BUY / BUY ON DIP / HOLD / AVOID — khareed sakte ho ya nahi\n2. 3 reasons (Hindi+English)\n3. Entry zone, Stop Loss, Target 1 & 2\n4. Confidence 1-10\nCapital: ₹1,00,000 | Risk: 1% per trade.`},
 {id:'ta',n:'📊 NSE/BSE Technical Analysis',t:`Analyze {symbol} on {tf} for Indian market (NSE/BSE).\n\nIST Time: {time}\nMarket: {status}\n\nProvide: Trend, Support/Resistance, Entry, SL, Targets, R:R, Confidence 1-10.\nInclude Indian market context: STT, session timing, FII/DII if relevant.\nCapital: ₹1,00,000 | Risk: 1% per trade.`},
 {id:'intra',n:'🎯 Intraday Setup',t:`Intraday setup for {symbol} on {tf}. IST: {time}. Session: {session}.\n\nScan: ORB, VWAP, prev day H/L, volume spike.\nSquare off before 3:20 PM. Risk 1%. Give LONG/SHORT/NO TRADE.`},
 {id:'fno',n:'📈 F&O Options Analysis',t:`F&O analysis for {symbol} on NSE. Timeframe: {tf}.\n\nAnalyze: Futures premium, Max Pain, PCR, OI buildup, IV, expiry week behavior.\nGive directional or neutral strategy with strikes.`},
 {id:'swing',n:'🔄 Swing Trade',t:`Swing trade analysis for {symbol} on {tf}. Hold 3-15 days.\nMulti-TF alignment, patterns, Fibonacci, delivery volume.\nEntry, SL, T1, T2, T3 for ₹1L capital.`}
 ],
 forex:[
+{id:'buy',n:'🛒 Buy / Sell Advice',t:`Should I buy {symbol} now on {tf}? Session: {session}.\nClear verdict: BUY / HOLD / AVOID with entry, SL, targets.`},
 {id:'ta',n:'📊 Forex Technical Analysis',t:`Analyze {symbol} on {tf}. Session: {session}. UTC: {utc}.\nSupport/resistance, RSI, MACD, ATR stops. Bias, Entry, SL, TP1-3 in pips.`},
 {id:'sess',n:'⚡ Session Strategy',t:`Session plan for {symbol}. Active: {session}.\nAsian range, London breakout, NY reversal. Risk 1%.`},
 {id:'usdinr',n:'🇮🇳 USD/INR (RBI)',t:`USD/INR analysis for Indian regulated context. NSE CDS setup if applicable.\nRBI zones, FII flow, crude oil impact.`}
 ],
 crypto:[
+{id:'buy',n:'🛒 Khareedna Chahiye? (Buy Advice)',t:`Should I buy {symbol} now on {tf}? Fear&Greed: {fg}.\nClear verdict BUY/HOLD/AVOID. Entry, SL, targets. Indian 30% tax note.`},
 {id:'ta',n:'📊 Crypto Technical Analysis',t:`Analyze {symbol} on {tf}. Fear&Greed: {fg}.\nTrend, S/R, RSI, MACD, funding rate. Entry, SL, targets.\nNote: 30% tax + 1% TDS in India.`},
 {id:'btc',n:'🌐 BTC Dominance',t:`BTC dominance analysis and altcoin implications. Current trend and allocation strategy.`},
 {id:'tax',n:'💰 Tax-Aware Trade',t:`{symbol} trade on {tf} with Indian 30% crypto tax factored in.\nOnly recommend if net R:R after tax > 1:2.`}
@@ -134,17 +147,31 @@ function saveKey(){
 
 function copyOut(){navigator.clipboard.writeText(document.getElementById('output').textContent);document.getElementById('aiStatus').textContent='✅ Copied!'}
 
+function showVerdict(v){
+  const el=document.getElementById('verdict');
+  if(!v){el.className='verdict';el.innerHTML='';return;}
+  const cls=v.action==='BUY'?'buy':v.action==='BUY ON DIP'?'dip':v.action==='AVOID'?'avoid':v.action==='SELL / EXIT'?'sell':'hold';
+  el.className='verdict show '+cls;
+  el.innerHTML=`<div class="v-title">${v.emoji} ${v.actionHi}</div>
+<div class="v-sub">Signal: ${v.action} | Confidence: ${v.confidence}/10 | ${v.symbol} (${v.timeframe})</div>
+<div class="v-detail">${v.actionDetail}</div>
+<div class="v-reasons">${(v.reasons||[]).map(r=>'• '+r).join('<br>')}</div>`;
+}
+
 async function runAI(){
   const ctx=window._ctx||{symbol:document.getElementById('symbol').value,market,timeframe:document.getElementById('tf').value};
   const prompt=window._prompt||document.getElementById('output').textContent;
   const key=localStorage.getItem('tp_key')||'';
-  document.getElementById('aiStatus').textContent='⏳ '+ctx.symbol+' live data fetch...';
+  document.getElementById('aiStatus').textContent='⏳ '+ctx.symbol+' live data + advice...';
   document.getElementById('output').textContent='Loading...';
+  showVerdict(null);
   try{
     const res=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user:prompt,symbol:ctx.symbol,market:ctx.market,timeframe:ctx.timeframe,apiKey:key||undefined})});
     const data=await res.json();
+    if(data.verdict) showVerdict(data.verdict);
     document.getElementById('output').textContent=data.content||prompt;
-    document.getElementById('aiStatus').textContent='✅ '+ctx.symbol+' ('+ctx.timeframe+')'+(data.meta?.spotPrice?' — live data ✓':'');
+    const v=data.verdict?.actionHi||'Analysis ready';
+    document.getElementById('aiStatus').textContent='✅ '+v+(data.meta?.spotPrice?' — live data ✓':'');
   }catch(e){
     document.getElementById('output').textContent=prompt;
     document.getElementById('aiStatus').textContent='✅ Prompt ready';

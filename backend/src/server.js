@@ -9,7 +9,7 @@ import Razorpay from 'razorpay';
 import { LicenseStore } from './storage.js';
 import { createAdminRoutes } from './admin.js';
 import { runAnalysis } from './ai-service.js';
-import { generateSmartAnalysis } from './smart-analysis.js';
+import { generateSmartAnalysis, getAnalysisVerdict } from './smart-analysis.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -158,15 +158,27 @@ app.post('/api/analyze', async (req, res) => {
       content: result.content,
       source: result.source,
       demo: result.demo,
-      meta: result.meta
+      meta: result.meta,
+      verdict: result.verdict || getAnalysisVerdict({ user: userPrompt }, result.meta || {})
     });
   } catch (error) {
     console.error('Analyze error:', error);
+    const meta = {
+      symbol: req.body?.symbol,
+      market: req.body?.market,
+      timeframe: req.body?.timeframe
+    };
     const content = generateSmartAnalysis(
       { user: req.body?.user || req.body?.prompt || '' },
-      { symbol: req.body?.symbol, market: req.body?.market, timeframe: req.body?.timeframe }
+      meta
     );
-    res.json({ success: true, content, source: 'smart-engine', demo: true });
+    res.json({
+      success: true,
+      content,
+      source: 'smart-engine',
+      demo: true,
+      verdict: getAnalysisVerdict({ user: req.body?.user || req.body?.prompt || '' }, meta)
+    });
   }
 });
 

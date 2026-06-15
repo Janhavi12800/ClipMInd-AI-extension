@@ -2,6 +2,8 @@
  * Smart analysis — uses real market data when available
  */
 
+import { computeVerdict, formatVerdictBlock } from './advice-engine.js';
+
 function fmtPrice(price, market, currency) {
   if (!price && price !== 0) return 'N/A';
   if (market === 'forex') return Number(price).toFixed(4);
@@ -85,7 +87,17 @@ STRATEGY: Breakout if close outside ${range} with volume | Fade if rejection at 
   const bias = changeStr.includes('-') ? 'Bearish lean'
     : changeStr.includes('+') || (parseFloat(changeStr) > 0) ? 'Bullish lean' : 'Neutral';
 
-  return `📊 TECHNICAL ANALYSIS — ${symbol} (${timeframe})
+  const verdict = computeVerdict({
+    spot,
+    change: changeStr,
+    levels,
+    market,
+    symbol,
+    timeframe
+  });
+  const verdictBlock = formatVerdictBlock(verdict);
+
+  return `${verdictBlock}📊 TECHNICAL ANALYSIS — ${symbol} (${timeframe})
 🕐 IST: ${ist} | Market: ${marketLabel}
 💰 Spot: ${spotStr} | Change: ${changeStr}
 📏 ATR: ${atr || levels?.atr || 'N/A'} | Range: ${range}
@@ -108,6 +120,25 @@ ${marketTips[market] || ''}
 💡 Trade with trend. Risk max 1% per trade.
 
 ⚠️ Educational only. Live data: ${meta.source || 'Yahoo Finance'}${meta.demo ? ' | Add OPENAI_API_KEY for GPT analysis' : ''}`;
+}
+
+export function getAnalysisVerdict(prompt = {}, meta = {}) {
+  const user = prompt.user || '';
+  const symbol = meta.symbol || extractSymbol(user) || 'NIFTY';
+  const timeframe = meta.timeframe || extractTimeframe(user) || '15m';
+  const market = meta.market || detectMarket(user) || 'india';
+  const spot = meta.spotPrice;
+  const change = meta.change || meta.change24h || 'N/A';
+  const atr = meta.atr ? String(meta.atr).replace(/\s*\(.*\)/, '') : null;
+  const levels = spot ? calcLevels(spot, atr, market) : null;
+  return computeVerdict({
+    spot,
+    change: String(change),
+    levels,
+    market,
+    symbol,
+    timeframe
+  });
 }
 
 function extractSymbol(user) {

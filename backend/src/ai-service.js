@@ -2,7 +2,7 @@
  * AI analysis service — OpenAI when configured, smart fallback with live data
  */
 
-import { generateSmartAnalysis } from './smart-analysis.js';
+import { generateSmartAnalysis, getAnalysisVerdict } from './smart-analysis.js';
 import { fetchMarketData, fetchVolatilityMetrics } from './market-data.js';
 
 export async function buildMarketMeta({ symbol, market, timeframe }) {
@@ -40,6 +40,7 @@ function getForexSession() {
 export async function runAnalysis({ system, user, image, apiKey, fast = false, symbol, market, timeframe }) {
   const key = apiKey || process.env.OPENAI_API_KEY || '';
   const meta = await buildMarketMeta({ symbol, market, timeframe });
+  const verdict = getAnalysisVerdict({ user }, meta);
 
   const enrichedUser = meta.spotPrice
     ? `${user}\n\n[LIVE DATA]\nSymbol: ${meta.symbol}\nTimeframe: ${meta.timeframe}\nSpot: ${meta.spotPrice}\nChange: ${meta.change || 'N/A'}\nATR: ${meta.atr || 'N/A'}\nRange: ${meta.recentRange || 'N/A'}\nMarket: ${meta.market}`
@@ -48,7 +49,7 @@ export async function runAnalysis({ system, user, image, apiKey, fast = false, s
   if (key && key.startsWith('sk-') && !image) {
     try {
       const result = await callOpenAI({ system, user: enrichedUser, key, fast });
-      return { content: result, source: 'openai', demo: false, meta };
+      return { content: result, source: 'openai', demo: false, meta, verdict };
     } catch (err) {
       console.warn('OpenAI failed, using smart analysis:', err.message);
     }
@@ -57,7 +58,7 @@ export async function runAnalysis({ system, user, image, apiKey, fast = false, s
   if (key && key.startsWith('sk-') && image) {
     try {
       const result = await callOpenAIVision({ system, user: enrichedUser, image, key });
-      return { content: result, source: 'openai-vision', demo: false, meta };
+      return { content: result, source: 'openai-vision', demo: false, meta, verdict };
     } catch (err) {
       console.warn('Vision failed, using smart analysis:', err.message);
     }
@@ -68,7 +69,8 @@ export async function runAnalysis({ system, user, image, apiKey, fast = false, s
     content,
     source: meta.spotPrice ? 'smart-engine+live' : 'smart-engine',
     demo: !key.startsWith('sk-'),
-    meta
+    meta,
+    verdict
   };
 }
 

@@ -64,6 +64,24 @@ export const INDIA_MARKET = {
 };
 
 export const INDIA_PROMPT_TEMPLATES = {
+  buyAdvice: {
+    id: 'india-buy',
+    name: '🛒 Khareedna Chahiye? (Buy Advice)',
+    category: 'advice',
+    template: `Should I buy {symbol} right now on {timeframe} for Indian market (NSE/BSE)?
+
+IST: {currentTime} | Market: {marketStatus}
+
+Give CLEAR verdict in Hindi+English:
+1. BUY / BUY ON DIP / HOLD / AVOID — khareed sakte ho ya nahi
+2. 3 reasons with live technical data
+3. Entry zone, Stop Loss, Target 1 & 2
+4. Confidence 1-10
+5. Invalidation level
+
+Capital: ₹{capital} | Risk: {riskPercent}% per trade.`
+  },
+
   technicalAnalysis: {
     id: 'india-ta',
     name: 'NSE/BSE Technical Analysis',
