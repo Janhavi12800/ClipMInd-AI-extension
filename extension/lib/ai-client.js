@@ -27,7 +27,10 @@ export class AIClient {
           user: prompt.user,
           image: options.image,
           apiKey: this.apiKey || undefined,
-          fast: options.fast || !options.vision
+          fast: options.fast || !options.vision,
+          symbol: options.symbol,
+          market: options.market,
+          timeframe: options.timeframe
         })
       });
 

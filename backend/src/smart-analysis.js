@@ -1,93 +1,127 @@
 /**
- * Smart analysis fallback — works without OpenAI API key (no errors for user)
+ * Smart analysis — uses real market data when available
  */
 
-function extractField(text, patterns) {
-  for (const re of patterns) {
-    const m = text.match(re);
-    if (m?.[1]) return m[1].trim();
-  }
-  return null;
+function fmtPrice(price, market, currency) {
+  if (!price && price !== 0) return 'N/A';
+  if (market === 'forex') return Number(price).toFixed(4);
+  if (market === 'crypto') return '$' + Number(price).toLocaleString('en-US', { maximumFractionDigits: 2 });
+  return '₹' + Number(price).toLocaleString('en-IN', { maximumFractionDigits: 2 });
 }
 
-export function generateSmartAnalysis(prompt = {}) {
+function calcLevels(spot, atrRaw, market) {
+  const atr = parseFloat(String(atrRaw).replace(/[^\d.]/g, '')) || spot * (market === 'forex' ? 0.003 : 0.02);
+  const dec = market === 'forex' ? 4 : 2;
+  const s = Number(spot);
+  return {
+    support: (s - atr).toFixed(dec),
+    resistance: (s + atr).toFixed(dec),
+    sl: (s - atr * 1.2).toFixed(dec),
+    target1: (s + atr * 1.5).toFixed(dec),
+    target2: (s + atr * 2.5).toFixed(dec),
+    atr: atr.toFixed(dec)
+  };
+}
+
+export function generateSmartAnalysis(prompt = {}, meta = {}) {
   const user = prompt.user || '';
-  const symbol = extractField(user, [
-    /Symbol:\s*([^\n]+)/i,
-    /Analyze[^\n]*for\s+([A-Z0-9/.\-]+)/i,
-    /for\s+([A-Z][A-Z0-9/.\-]{1,20})/i
-  ]) || 'NIFTY';
-
-  const timeframe = extractField(user, [/Timeframe:\s*([^\n]+)/i, /on\s+(\d+[mhdwMHDW]|\d+\s*min)/i]) || '15m';
-  const atr = extractField(user, [/ATR:\s*([^\n]+)/i]) || 'use 14-period ATR from chart';
-  const range = extractField(user, [/Recent range[^:]*:\s*([^\n]+)/i, /range[^:]*:\s*([\d.,\s\-]+)/i]) || 'previous session high/low';
-  const iv = extractField(user, [/IV[^:]*:\s*([^\n]+)/i]) || 'India VIX for index trades';
-  const spot = extractField(user, [/Spot:\s*([^\n]+)/i]) || 'current market price';
-  const market = extractField(user, [/Market:\s*([^\n]+)/i]) || 'india';
-
-  const isVolatility = /volatility/i.test(user);
+  const symbol = meta.symbol || extractSymbol(user) || 'NIFTY';
+  const timeframe = meta.timeframe || extractTimeframe(user) || '15m';
+  const market = meta.market || detectMarket(user) || 'india';
+  const spot = meta.spotPrice;
+  const spotStr = fmtPrice(spot, market, meta.currency);
+  const change = meta.change || meta.change24h || 'N/A';
+  const atr = meta.atr ? String(meta.atr).replace(/\s*\(.*\)/, '') : null;
+  const range = meta.recentRange || 'N/A';
+  const iv = meta.ivPercentile || (market === 'india' ? 'Check India VIX' : 'N/A');
   const ist = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+  const marketLabel = { india: '🇮🇳 India NSE/BSE', forex: '💱 Forex', crypto: '₿ Crypto' }[market] || market;
+
+  const levels = spot ? calcLevels(spot, atr, market) : null;
+  const isVolatility = /volatility/i.test(user);
 
   if (isVolatility) {
     return `📊 VOLATILITY ANALYSIS — ${symbol} (${timeframe})
-🕐 IST: ${ist} | Market: ${market}
+🕐 IST: ${ist} | Market: ${marketLabel}
+💰 Spot: ${spotStr} | Change: ${change}
 
-📈 BIAS: Neutral-to-cautious (wait for confirmation before aggressive entries)
+📈 BIAS: ${spot ? 'Analyze breakout vs range-bound' : 'Neutral — confirm on chart'}
 
-WHEN (timing):
-• Indian session open (9:15–10:00 AM IST) — highest intraday volatility window
-• 3:00–3:30 PM IST — closing volatility & F&O rollover effects
-• Watch economic calendar & global cues (US futures, crude)
+DATA:
+• ATR (14): ${atr || levels?.atr || 'add ATR indicator on chart'} ${timeframe}
+• 20-bar range: ${range}
+• IV / Fear: ${iv}
 
-HOW MUCH (expected move):
-• ATR reference: ${atr}
-• Recent range: ${range}
-• IV / fear gauge: ${iv}
-• Rule: Expected move ≈ 0.5–1.5× ATR for intraday; wider for swing
+WHEN: Session open 9:15–10:00 IST | Close 3:00–3:30 IST
+HOW MUCH: Expected move ≈ 0.8–1.5× ATR (${levels?.atr || 'see chart'})
+STRATEGY: Breakout if close outside ${range} with volume | Fade if rejection at extremes
 
-HOW (direction):
-• Breakout play if price closes outside range with volume
-• Mean reversion if price rejects range extremes + RSI divergence
-• Avoid straddles if IV already elevated
+📉 CONFIDENCE: 7/10
+💡 Plan before market open. No setup = no trade.
 
-WHY (catalysts):
-• Index level reactions at round numbers & previous day H/L
-• Sector leadership (Bank Nifty vs Nifty for index trades)
-• FII/DII flow & global risk sentiment
-
-🎯 ACTION PLAN:
-1. Mark PDH, PDL, and opening range (first 15 min)
-2. SL = 1× ATR beyond invalidation
-3. Target = 1.5–2× risk minimum
-4. If no clear setup → NO TRADE (capital preservation)
-
-📉 CONFIDENCE: 6/10
-💡 KEY INSIGHT: Volatility expands at session edges — plan entries before 9:15 AM, not during chaos.
-
-⚠️ Educational analysis only. Verify on your chart before trading.`;
+⚠️ Educational only. Data: ${meta.source || 'Yahoo Finance'}`;
   }
 
-  return `📊 TECHNICAL ANALYSIS — ${symbol} (${timeframe})
-🕐 IST: ${ist} | Spot: ${spot} | Market: ${market}
+  const sLine = levels
+    ? `• Support: ${levels.support} (recent low zone)
+• Resistance: ${levels.resistance} (recent high zone)
+• Entry: ${spotStr} pullback to EMA21 OR breakout above ${levels.resistance}
+• Stop Loss: ${levels.sl} (1.2× ATR)
+• Target 1: ${levels.target1} (R:R 1:1.5)
+• Target 2: ${levels.target2} (R:R 1:2.5)`
+    : `• Support: previous day low / recent swing low
+• Resistance: previous day high / recent swing high
+• Entry: pullback to EMA21 on ${timeframe}
+• Stop Loss: 1× ATR below entry
+• Target 1 & 2: 1.5× and 2.5× risk`;
 
-📈 BIAS: Neutral (analyze trend on chart before entry)
+  const marketTips = {
+    india: '• NSE session 9:15–3:30 IST | Square intraday before 3:20 PM\n• Check FII/DII flow & sector trend',
+    forex: `• Active session: ${meta.session || 'check London/NY overlap'}\n• Use pip-based stops | Watch USD strength`,
+    crypto: '• 24/7 market | Watch BTC correlation\n• India: 30% tax + 1% TDS on gains'
+  };
+
+  return `📊 TECHNICAL ANALYSIS — ${symbol} (${timeframe})
+🕐 IST: ${ist} | Market: ${marketLabel}
+💰 Spot: ${spotStr} | Change: ${change}
+📏 ATR: ${atr || levels?.atr || 'N/A'} | Range: ${range}
+
+📈 BIAS: ${change.includes('-') ? 'Bearish lean' : change.includes('+') || (parseFloat(change) > 0) ? 'Bullish lean' : 'Neutral'} — confirm on chart
 
 🎯 LEVELS:
-• Support: recent swing low / previous day low
-• Resistance: recent swing high / previous day high
-• Entry: pullback to EMA21 or breakout above resistance with volume
-• Stop Loss: below support or 1× ATR (${atr})
-• Target 1: 1:1.5 R:R | Target 2: 1:2 R:R
+${sLine}
 
-📉 TREND:
-• Check higher timeframe (1H/1D) for direction
-• ${timeframe} for precise entry timing
-• Confluence: RSI (40–60 zone for pullback), MACD histogram, VWAP (intraday)
+📉 TREND (${timeframe}):
+• Higher TF (1H/1D): trade with dominant trend
+• RSI 40–60 pullback zone | MACD histogram direction
+• VWAP: intraday bias anchor
 
-⚠️ INVALIDATION: Close below key support on ${timeframe}
+${marketTips[market] || ''}
 
-📉 CONFIDENCE: 6/10
-💡 KEY INSIGHT: Trade with the higher-timeframe trend — counter-trend scalps need tighter stops.
+⚠️ INVALIDATION: ${levels ? `Close below ${levels.support} on ${timeframe}` : `Break of key support on ${timeframe}`}
 
-⚠️ Educational only. Not financial advice. Cross-check all levels on TradingView.`;
+📉 CONFIDENCE: ${spot ? '7' : '6'}/10
+💡 Trade with trend. Risk max 1% per trade.
+
+⚠️ Educational only. Live data: ${meta.source || 'Yahoo Finance'}${meta.demo ? ' | Add OPENAI_API_KEY for GPT analysis' : ''}`;
+}
+
+function extractSymbol(user) {
+  const m = user.match(/Analyze\s+([A-Z0-9./\-]+)\s+on/i);
+  if (m) return m[1];
+  const m2 = user.match(/(?:setup|analysis|trade)\s+for\s+([A-Z0-9./\-]+)\s+on/i);
+  if (m2) return m2[1];
+  return null;
+}
+
+function extractTimeframe(user) {
+  const m = user.match(/\bon\s+(\d+[mhdw]|\d+\s*min|1D|4h|1h|15m|5m)\b/i);
+  return m ? m[1] : null;
+}
+
+function detectMarket(user) {
+  if (/forex|EUR|USD\/|GBP|pip/i.test(user)) return 'forex';
+  if (/crypto|BTC|ETH|USDT/i.test(user)) return 'crypto';
+  if (/NSE|BSE|IST|Indian|₹|F&O|intraday.*3:20/i.test(user)) return 'india';
+  return null;
 }

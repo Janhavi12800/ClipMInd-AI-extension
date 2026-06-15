@@ -123,9 +123,20 @@ app.get('/api/plans', (req, res) => {
   });
 });
 
+app.post('/api/market-context', async (req, res) => {
+  try {
+    const { symbol, market, timeframe } = req.body;
+    const { buildMarketMeta } = await import('./ai-service.js');
+    const meta = await buildMarketMeta({ symbol, market, timeframe });
+    res.json({ success: true, meta });
+  } catch (error) {
+    res.json({ success: false, meta: {} });
+  }
+});
+
 app.post('/api/analyze', async (req, res) => {
   try {
-    const { system, user, prompt, image, apiKey, fast } = req.body;
+    const { system, user, prompt, image, apiKey, fast, symbol, market, timeframe } = req.body;
     const userPrompt = user || prompt;
     if (!userPrompt) {
       return res.status(400).json({ success: false, message: 'Prompt is required' });
@@ -136,13 +147,25 @@ app.post('/api/analyze', async (req, res) => {
       user: userPrompt,
       image,
       apiKey: apiKey || req.headers['x-api-key'],
-      fast
+      fast,
+      symbol,
+      market,
+      timeframe
     });
 
-    res.json({ success: true, content: result.content, source: result.source, demo: result.demo });
+    res.json({
+      success: true,
+      content: result.content,
+      source: result.source,
+      demo: result.demo,
+      meta: result.meta
+    });
   } catch (error) {
     console.error('Analyze error:', error);
-    const content = generateSmartAnalysis({ user: req.body?.user || req.body?.prompt || '' });
+    const content = generateSmartAnalysis(
+      { user: req.body?.user || req.body?.prompt || '' },
+      { symbol: req.body?.symbol, market: req.body?.market, timeframe: req.body?.timeframe }
+    );
     res.json({ success: true, content, source: 'smart-engine', demo: true });
   }
 });

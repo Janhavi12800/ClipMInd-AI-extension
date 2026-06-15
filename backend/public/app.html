@@ -112,7 +112,12 @@ function fill(t){return t.replace('{symbol}',document.getElementById('symbol').v
 function renderTpl(){
   document.getElementById('templates').innerHTML=TPL[market].map((x,i)=>`<div class="tpl" onclick="pick(${i})"><span>${x.n}</span></div>`).join('');
 }
-function pick(i){document.getElementById('output').textContent=fill(TPL[market][i].t);window._prompt=fill(TPL[market][i].t)}
+function pick(i){
+  const p=fill(TPL[market][i].t);
+  document.getElementById('output').textContent=p;
+  window._prompt=p;
+  window._ctx={symbol:document.getElementById('symbol').value,market,timeframe:document.getElementById('tf').value};
+}
 
 document.getElementById('markets').onclick=e=>{
   const t=e.target.closest('.tab');if(!t)return;
@@ -130,26 +135,19 @@ function saveKey(){
 function copyOut(){navigator.clipboard.writeText(document.getElementById('output').textContent);document.getElementById('aiStatus').textContent='✅ Copied!'}
 
 async function runAI(){
+  const ctx=window._ctx||{symbol:document.getElementById('symbol').value,market,timeframe:document.getElementById('tf').value};
   const prompt=window._prompt||document.getElementById('output').textContent;
-  const key=localStorage.getItem('tp_key')||document.getElementById('apiKey').value.trim();
-  document.getElementById('aiStatus').textContent='⏳ Analysis ho rahi hai...';
-  document.getElementById('output').textContent='Analyzing...';
+  const key=localStorage.getItem('tp_key')||'';
+  document.getElementById('aiStatus').textContent='⏳ '+ctx.symbol+' live data fetch...';
+  document.getElementById('output').textContent='Loading...';
   try{
-    const res=await fetch('/api/analyze',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        user:prompt,
-        apiKey:key||undefined,
-        system:'You are TradePrompt AI, expert Indian/Forex/Crypto trading analyst. Educational only.'
-      })
-    });
+    const res=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({user:prompt,symbol:ctx.symbol,market:ctx.market,timeframe:ctx.timeframe,apiKey:key||undefined})});
     const data=await res.json();
     document.getElementById('output').textContent=data.content||prompt;
-    document.getElementById('aiStatus').textContent=data.demo?'✅ Analysis ready!':'✅ AI analysis complete!';
+    document.getElementById('aiStatus').textContent='✅ '+ctx.symbol+' ('+ctx.timeframe+')'+(data.meta?.spotPrice?' — live ₹/'+data.meta.spotPrice:'');
   }catch(e){
     document.getElementById('output').textContent=prompt;
-    document.getElementById('aiStatus').textContent='✅ Prompt ready — copy kar sakte ho';
+    document.getElementById('aiStatus').textContent='✅ Prompt ready';
   }
 }
 

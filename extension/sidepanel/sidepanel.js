@@ -237,7 +237,12 @@ async function runAI(prompt, options = {}) {
   setLoading('AI analyze kar raha hai...');
   try {
     const ai = await createAIClient();
-    const result = await ai.analyze(prompt, options);
+    const result = await ai.analyze(prompt, {
+      ...options,
+      symbol: getVariables().symbol,
+      market: currentMarket,
+      timeframe: getVariables().timeframe
+    });
     lastResult = result.content;
     setOutput(result.content);
     showToast(result.demo ? 'Analysis ready ✓' : 'AI analysis complete ✓');
