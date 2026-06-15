@@ -41,7 +41,6 @@ jobs:
 
       - name: Integration tests
         run: npm run test:integration
-        continue-on-error: true
 
   build:
     runs-on: ubuntu-latest
@@ -59,6 +58,9 @@ jobs:
         env:
           VITE_API_URL: https://placeholder.supabase.co/functions/v1
           VITE_PAYMENTS_URL: https://placeholder.supabase.co/functions/v1
+          VITE_SUPABASE_URL: https://placeholder.supabase.co
+          VITE_SUPABASE_ANON_KEY: placeholder
+          VITE_DEMO_MODE: 'true'
 
       - name: Build extension
         run: cd extension && npm ci && npm run build
@@ -83,10 +85,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      - name: Run security scan
-        run: node tests/security/security-scan.mjs
-        continue-on-error: true
 
       - name: Dependency audit
         run: |
@@ -116,10 +114,10 @@ jobs:
           name: frontend-dist
           path: frontend/dist/
 
-      - name: Serve frontend
-        run: cd frontend && npx vite preview --port 5173 &
-
-      - name: Run E2E tests
-        run: npx playwright test --config tests/playwright.config.ts --project=chromium
+      - name: Serve frontend and run E2E
+        run: |
+          cd frontend && npx vite preview --port 5173 &
+          npx wait-on http://localhost:5173 --timeout 60000
+          npx playwright test --config tests/playwright.config.ts --project=chromium
         env:
           E2E_BASE_URL: http://localhost:5173

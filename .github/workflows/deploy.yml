@@ -72,7 +72,8 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ vars.AWS_REGION }}
 
-      - name: Build and push Docker image
+      - name: Build Docker image
+        if: vars.DEPLOY_TARGET == 'aws'
         run: |
           docker build \
             --build-arg VITE_API_URL="${{ vars.VITE_API_URL }}" \
@@ -81,6 +82,11 @@ jobs:
             --build-arg VITE_SUPABASE_ANON_KEY="${{ vars.VITE_SUPABASE_ANON_KEY }}" \
             -t techshield-frontend:${{ github.sha }} \
             -f docker/Dockerfile .
+
+      - name: Push to ECR
+        if: vars.DEPLOY_TARGET == 'aws'
+        run: |
+          aws ecr get-login-password --region ${{ vars.AWS_REGION }} | docker login --username AWS --password-stdin ${{ vars.ECR_REGISTRY }}
           docker tag techshield-frontend:${{ github.sha }} ${{ vars.ECR_REGISTRY }}/techshield-frontend:latest
           docker push ${{ vars.ECR_REGISTRY }}/techshield-frontend:latest
 

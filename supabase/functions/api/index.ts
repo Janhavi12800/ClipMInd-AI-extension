@@ -7,6 +7,7 @@ import { createRequestId, logRequest, hashIp } from '../_shared/logger.ts';
 import { handleProfile, handleSettings, handlePlans, handleSubscription } from '../_shared/handlers/profile.ts';
 import { handlePrompts, handleContent } from '../_shared/handlers/ai.ts';
 import { handleScans, handleNotes, handleAnalytics, handleAuditLogs } from '../_shared/handlers/data.ts';
+import { handleAffiliateTrack, handleAppSumoRedeem } from '../_shared/handlers/partners.ts';
 
 const API_VERSION = 'v1';
 
@@ -102,6 +103,28 @@ serve(async (req: Request) => {
 
       case 'audit-logs':
         response = await handleAuditLogs(req, auth, requestId);
+        break;
+
+      case 'affiliates':
+        if (subResource === 'track') {
+          response = await handleAffiliateTrack(req, auth, requestId);
+        } else {
+          response = new Response(
+            JSON.stringify({ error: { code: 'NOT_FOUND', message: 'Affiliate route not found', request_id: requestId } }),
+            { status: 404, headers: { 'Content-Type': 'application/json' } },
+          );
+        }
+        break;
+
+      case 'licenses':
+        if (subResource === 'redeem') {
+          response = await handleAppSumoRedeem(req, auth, requestId);
+        } else {
+          response = new Response(
+            JSON.stringify({ error: { code: 'NOT_FOUND', message: 'License route not found', request_id: requestId } }),
+            { status: 404, headers: { 'Content-Type': 'application/json' } },
+          );
+        }
         break;
 
       default:

@@ -26,6 +26,8 @@ async function loadSettings(): Promise<void> {
 }
 
 async function saveSettings(): Promise<void> {
+  const token = (document.getElementById('auth-token') as HTMLInputElement).value.trim()
+
   const settings: Partial<Settings> = {
     theme: (document.getElementById('theme') as HTMLSelectElement).value,
     phishingSensitivity: (document.getElementById('phishing-sensitivity') as HTMLSelectElement).value,
@@ -37,6 +39,11 @@ async function saveSettings(): Promise<void> {
   }
 
   await sendToBackground('SET_SETTINGS', settings)
+
+  if (token) {
+    await sendToBackground('SET_AUTH_TOKEN', { token })
+  }
+
   await applyTheme()
 
   const status = document.getElementById('save-status')!
@@ -48,8 +55,27 @@ document.getElementById('btn-save')!.addEventListener('click', saveSettings)
 
 document.getElementById('btn-reset')!.addEventListener('click', async () => {
   await sendToBackground('SET_SETTINGS', DEFAULT_SETTINGS)
+  await sendToBackground('SET_AUTH_TOKEN', { token: null })
   await loadSettings()
   document.getElementById('save-status')!.textContent = '✓ Reset to defaults'
+})
+
+document.getElementById('btn-verify')!.addEventListener('click', async () => {
+  const token = (document.getElementById('auth-token') as HTMLInputElement).value.trim()
+  const status = document.getElementById('sync-status')!
+  if (!token) {
+    status.textContent = 'Enter a token first'
+    return
+  }
+  const result = await sendToBackground<{ token: string }, { valid: boolean }>('SET_AUTH_TOKEN', { token })
+  status.textContent = result.valid ? '✓ Token valid' : '✗ Invalid token'
+})
+
+document.getElementById('btn-sync')!.addEventListener('click', async () => {
+  const status = document.getElementById('sync-status')!
+  status.textContent = 'Syncing...'
+  const result = await sendToBackground<undefined, { synced: boolean; notes: number }>('SYNC_CLOUD')
+  status.textContent = `✓ Synced ${result.notes} notes`
 })
 
 loadSettings()

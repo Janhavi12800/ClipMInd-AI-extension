@@ -1,6 +1,6 @@
 export type Theme = 'light' | 'dark' | 'system'
 
-export type Plan = 'free' | 'pro' | 'team' | 'enterprise'
+export type Plan = 'free' | 'pro' | 'business' | 'team' | 'enterprise'
 
 export type RiskLevel = 'low' | 'medium' | 'high' | 'critical'
 

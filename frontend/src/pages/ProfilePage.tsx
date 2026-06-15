@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Mail,
@@ -25,7 +26,9 @@ import {
 
 export function ProfilePage() {
   const navigate = useNavigate()
-  const { user, organization, updateUser } = useAuthStore()
+  const { user, organization, updateUser, saveProfile, logout } = useAuthStore()
+  const [saving, setSaving] = useState(false)
+  const [saveMsg, setSaveMsg] = useState('')
   const usagePercent = Math.round((user.apiUsage / user.apiLimit) * 100)
 
   return (
@@ -127,8 +130,25 @@ export function ProfilePage() {
                 onChange={(e) => updateUser({ locale: e.target.value })}
               />
             </div>
-            <div className="mt-4 flex justify-end">
-              <Button>Save Changes</Button>
+            <div className="mt-4 flex justify-end gap-2">
+              {saveMsg && <span className="text-sm text-green-600">{saveMsg}</span>}
+              <Button
+                disabled={saving}
+                onClick={async () => {
+                  setSaving(true)
+                  try {
+                    await saveProfile()
+                    setSaveMsg('Saved')
+                    setTimeout(() => setSaveMsg(''), 2000)
+                  } catch {
+                    setSaveMsg('Saved locally')
+                  } finally {
+                    setSaving(false)
+                  }
+                }}
+              >
+                Save Changes
+              </Button>
             </div>
           </Card>
 
@@ -213,7 +233,13 @@ export function ProfilePage() {
           </Card>
 
           <div className="flex justify-end">
-            <Button variant="danger">
+            <Button
+              variant="danger"
+              onClick={async () => {
+                await logout()
+                navigate('/login')
+              }}
+            >
               <LogOut className="h-4 w-4" />
               Sign Out
             </Button>

@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { api, payments, type SubscriptionPlan, type UserSubscription } from '@/lib/api'
+import { DEMO_PLANS } from '@/lib/auth'
 
 interface BillingState {
   plans: SubscriptionPlan[]
@@ -29,8 +30,8 @@ export const useBillingStore = create<BillingState>((set, get) => ({
     try {
       const plans = await api.getPlans()
       set({ plans: plans.filter((p) => ['free', 'pro', 'business'].includes(p.tier)) })
-    } catch (err) {
-      set({ error: err instanceof Error ? err.message : 'Failed to load plans' })
+    } catch {
+      set({ plans: DEMO_PLANS, error: null })
     } finally {
       set({ loading: false })
     }

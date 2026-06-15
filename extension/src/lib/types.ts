@@ -157,6 +157,8 @@ export type MessageType =
   | 'DELETE_NOTE'
   | 'GET_SETTINGS'
   | 'SET_SETTINGS'
+  | 'SET_AUTH_TOKEN'
+  | 'SYNC_CLOUD'
   | 'GET_PRODUCTIVITY'
   | 'SET_PRODUCTIVITY'
   | 'OPEN_SIDE_PANEL'

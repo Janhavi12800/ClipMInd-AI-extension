@@ -7,6 +7,7 @@ import {
   StickyNote,
   Settings,
   User,
+  CreditCard,
   PanelRight,
   AppWindow,
   ChevronLeft,
@@ -27,6 +28,7 @@ const navItems = [
 ]
 
 const bottomNav = [
+  { path: '/billing', label: 'Billing', icon: CreditCard },
   { path: '/settings', label: 'Settings', icon: Settings },
   { path: '/profile', label: 'Profile', icon: User },
 ]

@@ -8,6 +8,7 @@ import { fetchSecurityHeaders, mergeScanResults } from '../modules/security/scan
 import { generatePrompt, enhancePrompt, getLibrary, saveToLibrary, deleteFromLibrary, toggleFavorite, getTemplates } from '../modules/ai/prompts'
 import { getNotes, saveNote, deleteNote, togglePin, searchNotes } from '../modules/notes/manager'
 import { getProductivity, saveSnippet, deleteSnippet, addTask, toggleTask, startPomodoro, stopPomodoro } from '../modules/productivity/toolkit'
+import { setAuthToken, syncNoteToCloud, syncPromptToCloud, pullNotesFromCloud, verifyAuthToken } from '../lib/api'
 import type { ExtensionMessage } from '../lib/types'
 
 const log = createLogger('ServiceWorker')
@@ -133,7 +134,9 @@ const messageHandler = createMessageHandler({
 
   SAVE_PROMPT: async (payload) => {
     const data = payload as { title: string; content: string; category: string; isFavorite?: boolean }
-    return saveToLibrary({ ...data, isFavorite: data.isFavorite ?? false })
+    const result = await saveToLibrary({ ...data, isFavorite: data.isFavorite ?? false })
+    syncPromptToCloud(data).catch(() => {})
+    return result
   },
 
   DELETE_PROMPT: async (payload) => {
@@ -143,7 +146,11 @@ const messageHandler = createMessageHandler({
 
   GET_NOTES: async (payload) => getNotes((payload as { url?: string })?.url),
 
-  SAVE_NOTE: async (payload) => saveNote(payload as Parameters<typeof saveNote>[0]),
+  SAVE_NOTE: async (payload) => {
+    const note = await saveNote(payload as Parameters<typeof saveNote>[0])
+    syncNoteToCloud(note as unknown as Record<string, unknown>).catch(() => {})
+    return note
+  },
 
   DELETE_NOTE: async (payload) => {
     await deleteNote((payload as { id: string }).id)
@@ -153,6 +160,29 @@ const messageHandler = createMessageHandler({
   GET_SETTINGS: async () => storage.getSettings(),
 
   SET_SETTINGS: async (payload) => storage.setSettings(payload as Record<string, unknown>),
+
+  SET_AUTH_TOKEN: async (payload) => {
+    const token = (payload as { token: string | null }).token
+    await setAuthToken(token)
+    const valid = token ? await verifyAuthToken() : false
+    return { saved: true, valid }
+  },
+
+  SYNC_CLOUD: async () => {
+    const notes = await pullNotesFromCloud()
+    if (notes?.length) {
+      for (const n of notes) {
+        await saveNote({
+          id: String(n.id),
+          title: String(n.title ?? ''),
+          content: String(n.content ?? ''),
+          url: String(n.url ?? ''),
+          tags: (n.tags as string[]) ?? [],
+        })
+      }
+    }
+    return { synced: true, notes: notes?.length ?? 0 }
+  },
 
   GET_PRODUCTIVITY: async () => getProductivity(),
 

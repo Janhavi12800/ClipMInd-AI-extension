@@ -63,8 +63,18 @@
       <h2>API Connection</h2>
       <div class="form-group">
         <label for="api-url">Supabase API Base URL</label>
-        <input type="url" id="api-url" placeholder="https://your-project.supabase.co" />
-        <p class="hint">Optional: Connect to TechShield AI cloud backend for sync</p>
+        <input type="url" id="api-url" placeholder="https://your-project.supabase.co/functions/v1" />
+        <p class="hint">Connect to TechShield AI cloud backend for sync</p>
+      </div>
+      <div class="form-group">
+        <label for="auth-token">Auth Token</label>
+        <input type="password" id="auth-token" placeholder="Paste access token from web dashboard" />
+        <p class="hint">Obtain from TechShield AI web app after signing in</p>
+      </div>
+      <div class="actions" style="margin-top:8px">
+        <button class="btn-secondary" id="btn-sync" type="button">Sync Now</button>
+        <button class="btn-secondary" id="btn-verify" type="button">Verify Token</button>
+        <span id="sync-status" class="save-status"></span>
       </div>
       <div class="setting-row">
         <div>

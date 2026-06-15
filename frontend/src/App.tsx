@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { MainLayout } from '@/components/layout'
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import {
   DashboardPage,
   PromptGeneratorPage,
@@ -11,15 +12,20 @@ import {
   SettingsPage,
   ProfilePage,
   BillingPage,
+  LoginPage,
+  RegisterPage,
+  AuthCallbackPage,
 } from '@/pages'
 import { PopupView, SidebarView } from '@/views'
-import { useThemeStore } from '@/store'
+import { useThemeStore, useAuthStore } from '@/store'
 
 function AppInitializer({ children }: { children: React.ReactNode }) {
   const { theme, setTheme } = useThemeStore()
+  const { initialize } = useAuthStore()
 
   useEffect(() => {
     setTheme(theme)
+    initialize()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return <>{children}</>
@@ -36,7 +42,17 @@ export default function App() {
           Skip to main content
         </a>
         <Routes>
-          <Route element={<MainLayout />}>
+          <Route path="login" element={<LoginPage />} />
+          <Route path="register" element={<RegisterPage />} />
+          <Route path="auth/callback" element={<AuthCallbackPage />} />
+
+          <Route
+            element={
+              <ProtectedRoute>
+                <MainLayout />
+              </ProtectedRoute>
+            }
+          >
             <Route index element={<DashboardPage />} />
             <Route path="ai/prompts" element={<PromptGeneratorPage />} />
             <Route path="ai/content" element={<ContentGeneratorPage />} />

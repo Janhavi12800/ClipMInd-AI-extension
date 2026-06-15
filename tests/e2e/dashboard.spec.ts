@@ -1,16 +1,17 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('TechShield AI Dashboard', () => {
-  test('loads dashboard with navigation', async ({ page }) => {
+  test('loads dashboard with welcome message', async ({ page }) => {
     await page.goto('/')
-    await expect(page.getByRole('heading', { name: /dashboard/i })).toBeVisible()
+    await expect(page.getByText(/welcome back/i)).toBeVisible()
     await expect(page.getByRole('navigation', { name: 'Primary' })).toBeVisible()
   })
 
-  test('navigates to billing page', async ({ page }) => {
-    await page.goto('/billing')
+  test('navigates to billing page via sidebar', async ({ page }) => {
+    await page.goto('/')
+    await page.getByRole('link', { name: 'Billing' }).click()
     await expect(page.getByRole('heading', { name: /billing/i })).toBeVisible()
-    await expect(page.getByText(/free/i).first()).toBeVisible()
+    await expect(page.getByText('Free').first()).toBeVisible()
   })
 
   test('navigates to security scanner', async ({ page }) => {
